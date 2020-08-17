@@ -4,6 +4,8 @@
   "description": "Backend de Tinder Ropa",
   "main": "index.js",
   "dependencies": {
+    "@hapi/boom": "^9.1.0",
+    "@hapi/joi": "^17.1.1",
     "aws-sdk": "^2.734.0",
     "bcrypt": "^5.0.0",
     "cors": "^2.8.5",
