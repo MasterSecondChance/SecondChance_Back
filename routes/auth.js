@@ -30,6 +30,8 @@ api.post("/token", async function(req, res, next) {
           );
         }
 
+        //Valdiación si tiene una prenda
+
         const payload = { sub: user._id, email: user.email };
         const token = jwt.sign(payload, config.authJwtSecret, {
           expiresIn: "30m"

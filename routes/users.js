@@ -11,7 +11,7 @@ function usersApi(app) {
   const usersService = new UsersService();
 
   router.get('/',
-             // passport.authenticate("jwt", {session:false}),
+              passport.authenticate("jwt", {session:false}),
               async function (req, res, next) {
     const { tags } = req.query;
     try {
@@ -41,8 +41,6 @@ function usersApi(app) {
   router.post('/', async function (req, res, next) {
     const { body: user } = req;
     let result = null
-
-
     result = userSchema.validate(user)
 
     if (result.error) {

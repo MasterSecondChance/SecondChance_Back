@@ -9,7 +9,7 @@ passport.use(
     const mongoDB = new MongoLib();
 
     try {
-      const [user] = await mongoDB.getAll("users", { email: username });
+      const [user] = await mongoDB.getAll("users", { userName: username });
       if (!user) {
         return cb(boom.unauthorized(), false);
       }

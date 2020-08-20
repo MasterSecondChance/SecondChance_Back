@@ -3,12 +3,14 @@ const app = express()
 const { config } = require('./config')
 const cors = require("cors")
 const users = require('./routes/users.js');
+const articles = require('./routes/articles.js');
 const authApiRouter = require('./routes/auth');
 
 app.use(express.json())
 app.use(cors())
 
 users(app);
+articles(app);
 
 app.use("/api/auth", authApiRouter);
 
