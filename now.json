@@ -1,0 +1,28 @@
+{
+    "name": "trode",
+    "version": 2,
+    "builds":[
+        {
+            "src": "index.js",
+            "use": "@now/node"
+        }
+    ],
+    "routes": [
+        {
+            "src": "/(.*)", 
+            "dest": "/index.js"
+        }
+    ],
+    "env": {
+        "DB_PASSWORD":"@trode-db-password",
+        "DB_USER":"@trode-db-user",
+        "DB_NAME":"@trode-db-name",
+        "DB_HOST":"@trode-db-host",
+        "AUTH_ADMIN_USERNAME":"@trode-auth-admin-username",
+        "AUTH_ADMIN_PASSWORD":"@trode-auth-admin-password",
+        "AUTH_ADMIN_EMAIL":"@trode-auth-admin-email",
+        "AUTH_JWT_SECRET":"@trode-auth-jwt-secret",
+        "SECRET_ACCESS_KEY":"@trode-secret-access-key",
+        "ACCESS_KEY_ID":"@trode-access-key-id"
+    }
+}

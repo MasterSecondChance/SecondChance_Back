@@ -44,9 +44,8 @@ function usersApi(app) {
     let result = null
 
     const existUser = await usersService.getUserExist({phone});
-
     result = userSchema.validate(user)
-    if (result.error || existUser !== {} ) {
+    if (result.error || existUser.length !== 0) {
       if(result.error){
         res.status(400).json({
           data: null,
@@ -55,7 +54,7 @@ function usersApi(app) {
       }else{
         res.status(401).json({
           data: null,
-          message: 'User Exists',
+          message: 'Bad Request',
         });
       }
     }else{
