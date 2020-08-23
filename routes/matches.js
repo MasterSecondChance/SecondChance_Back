@@ -44,8 +44,8 @@ function matchesApi(app) {
               async function (req, res, next) {
     const { body: match } = req;
     let result = null;
-    result = matchSchema.validate(match);
 
+    result = matchSchema.validate(match);
     if (result.error) {
       res.status(400).json({
         data: null,

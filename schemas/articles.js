@@ -9,9 +9,11 @@ const articleDateSchema = joi.string().regex(/^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|
 const articleUrlSchema = joi.string().regex(/^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$/);
 const articleDepartmentSchema = joi.string().max(60);
 const articleCitySchema = joi.string().trim().max(60);
+const articlePhoneOwnerSchema = joi.string().trim().regex(/^[0-9]{7,10}$/).required()
 
 
 const articleSchema = joi.object({
+  phoneOwner: articlePhoneOwnerSchema.required(),
   type: articleTypeSchema.required(),
   description: articledescriptionSchema.required(),
   color: articleColorSchema.required(),

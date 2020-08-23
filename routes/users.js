@@ -40,21 +40,31 @@ function usersApi(app) {
 
   router.post('/', async function (req, res, next) {
     const { body: user } = req;
+    const phone = user.phone;
     let result = null
-    result = userSchema.validate(user)
 
-    if (result.error) {
-      res.status(400).json({
-        data: null,
-        message: result.error.details[0].message,
-      })
+    const existUser = await usersService.getUserExist({phone});
+
+    result = userSchema.validate(user)
+    if (result.error || existUser !== {} ) {
+      if(result.error){
+        res.status(400).json({
+          data: null,
+          message: result.error.details[0].message,
+        });
+      }else{
+        res.status(401).json({
+          data: null,
+          message: 'User Exists',
+        });
+      }
     }else{
         try {
           const createUserId = await usersService.createUser({ user });
           let message = 'user created'
     
           if(!createUserId) {
-            message = 'Duplicated email'
+            message = 'Duplicated User'
           }
     
           res.status(201).json({

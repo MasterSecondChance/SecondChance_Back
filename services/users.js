@@ -17,11 +17,18 @@ class UsersService {
     const user = await this.mongoDB.get(this.collection, userId)
     return user || {}
   }
+  
+  async getUserExist({ phone }) {
+    const userExist = await this.mongoDB.getByPhone(this.collection, phone)
+    return userExist || {}
+  }
+  
 
   async createUser({ user }) {
     await this.createEmailIndex()
 
     try {
+
       const passdw = user.password
       const hashPass = await bcrypt.hash(passdw, 10)
       user.password = hashPass
