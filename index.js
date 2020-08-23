@@ -6,6 +6,7 @@ const users = require('./routes/users.js');
 const articles = require('./routes/articles.js');
 const matches = require('./routes/matches');
 const images = require('./routes/images');
+const reactions = require('./routes/reactions');
 const authApiRouter = require('./routes/auth');
 
 app.use(express.json())
@@ -14,6 +15,7 @@ app.use(cors())
 users(app);
 articles(app);
 matches(app);
+reactions(app);
 images(app);
 
 app.use("/api/auth", authApiRouter);

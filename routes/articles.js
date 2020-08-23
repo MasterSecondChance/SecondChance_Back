@@ -1,6 +1,7 @@
 const express = require('express');
 const passport = require('passport');
 const ArticlesServices = require('../services/articles');
+const ReactionsServices = require('../services/reactions');
 const { articleSchema, updateArticleSchema } = require('../schemas/articles');
 require("../utils/auth/strategies/jwt");
 
@@ -10,6 +11,7 @@ function articlesApi(app) {
   app.use('/api/articles', router);
 
   const articlesService = new ArticlesServices();
+  const reactionServices = new ReactionsServices();
 
   router.get('/',
              // passport.authenticate("jwt", {session:false}),
@@ -29,9 +31,15 @@ function articlesApi(app) {
   router.get('/:articleId', async function (req, res, next) {
     const { articleId } = req.params;
     try {
+      const superLikes = await reactionServices.getSuperLikesByArticle({articleId});
+      const likes = await reactionServices.getLikesByArticle({articleId});
+      const disLikes = await reactionServices.getDisLikesByArticle({articleId});
       const article = await articlesService.getArticle({ articleId });
       res.status(200).json({
         data: article,
+        like: likes,
+        superLikes: superLikes,
+        dislikes: disLikes,
         message: 'article retrieved',
       });
     } catch (err) {
