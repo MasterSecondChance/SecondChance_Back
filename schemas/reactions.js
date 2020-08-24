@@ -3,11 +3,12 @@ const joi = require('@hapi/joi')
 
 const mongoIdSchema = joi.string().regex(/^[0-9a-fA-F]{24}$/);
 const reactionTypeSchema = joi.string().max(60);
-
+const reactionPhoneSchema = joi.string().trim().regex(/^[0-9]{7,10}$/).required();
 
 const reactionSchema = joi.object({
   type: reactionTypeSchema.required(),
-  idUser: mongoIdSchema.required(),
+  phoneOwner: reactionPhoneSchema.required(),
+  phoneUser: reactionPhoneSchema.required(),
   idArticle: mongoIdSchema.required(),
 });
 

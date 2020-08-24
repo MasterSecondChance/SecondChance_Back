@@ -32,6 +32,11 @@ class ReactionsService {
     return DisLikes || {}
   }
 
+  async getReactionsMatch({reaction}){
+    const match = await this.mongoDB.getReactionsMatch(this.collection, reaction);
+    return match || 0;
+  }
+
   async createReaction({ reaction }) {
 
     try {      
@@ -41,6 +46,7 @@ class ReactionsService {
       return false
     }
   }
+
 
   async updateReaction({ reactionId, reaction } = {}) {
     

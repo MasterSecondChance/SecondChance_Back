@@ -15,7 +15,6 @@ passport.use(
       }
 
       if (!(await bcrypt.compare(password, user.password))) {
-
         return cb(boom.unauthorized(), false);
       }
 

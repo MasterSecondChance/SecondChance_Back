@@ -59,11 +59,24 @@ function reactionsApi(app) {
           if(!createReactionId) {
             message = 'Duplicated Reaction'
           }
-    
-          res.status(201).json({
-            data: createReactionId,
-            message,
-          });
+
+          const existMatch = await reactionsService.getReactionsMatch({reaction});
+          if(existMatch !== 0){
+            /**Hay un match */
+            /**Crear logica apra que inserte match en la base de datos */
+            res.status(201).json({
+              data: createReactionId,
+              message,
+              match: 1,
+            });
+          }else{
+            res.status(201).json({
+              data: createReactionId,
+              message,
+              match: 0,
+            });
+          }
+          
         } catch (err) {
           next(err);
         }
