@@ -13,9 +13,9 @@ function usersApi(app) {
   router.get('/',
               passport.authenticate("jwt", {session:false}),
               async function (req, res, next) {
-    const { tags } = req.query;
+    const { phone } = req.query;
     try {
-      const users = await usersService.getUsers({ tags });
+      const users = await usersService.getUsers({ phone });
       res.status(200).json({
         data: users,
         message: 'users listed',
@@ -81,30 +81,30 @@ function usersApi(app) {
               async function (req, res, next) {
     const { userId } = req.params;
     const { body: user } = req;
-    let result = null
+    let result = null;
 
-    result = updateUserSchema.validate(user)
+    result = updateUserSchema.validate(user);
     
     if (result.error) {
       res.status(400).json({
         data: null,
         message: result.error.details[0].message,
       })
-    }
-
-    try {
-      const updateUserId = await usersService.updateUser({ userId, user });
-      res.status(200).json({
-        data: updateUserId,
-        message: 'users updated',
-      });
-    } catch (err) {
-      next(err);
+    }else{
+      try {
+        const updateUserId = await usersService.updateUser({ userId, user });
+        res.status(200).json({
+          data: updateUserId,
+          message: 'users updated',
+        });
+      } catch (err) {
+        next(err);
+      }
     }
   });
 
   router.delete('/:userId',
-              passport.authenticate("jwt", {session:false}),
+              //passport.authenticate("jwt", {session:false}),
               async function (req, res, next) {
     const { userId } = req.params;
     try {

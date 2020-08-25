@@ -16,9 +16,9 @@ function articlesApi(app) {
   router.get('/',
              // passport.authenticate("jwt", {session:false}),
               async function (req, res, next) {
-    const { tags } = req.query;
+    const { phoneOwner } = req.query;
     try {
-      const articles = await articlesService.getArticles({ tags });
+      const articles = await articlesService.getArticles({ phoneOwner });
       res.status(200).json({
         data: articles,
         message: 'articles listed',
@@ -103,11 +103,10 @@ function articlesApi(app) {
         next(err);
       }
     }
-
   });
 
   router.delete('/:articleId',
-              passport.authenticate("jwt", {session:false}),
+              //passport.authenticate("jwt", {session:false}),
               async function (req, res, next) {
     const { articleId } = req.params;
     try {

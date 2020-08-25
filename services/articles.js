@@ -6,8 +6,9 @@ class ArticlesService {
     this.mongoDB = new MongoLib()
   }
   
-  async getArticles({ tags }) {
-    const query = tags && { tags: { $in: tags } }
+  async getArticles({ phoneOwner }) {
+    typeof(phoneOwner) == 'string' ? phoneOwner = [phoneOwner] : phoneOwner;
+    const query = phoneOwner && { phoneOwner: { $in: phoneOwner } }
     const articles = await this.mongoDB.getAll(this.collection, query)
     return articles || []
   }

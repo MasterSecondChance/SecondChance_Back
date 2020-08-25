@@ -7,8 +7,9 @@ class UsersService {
     this.mongoDB = new MongoLib()
   }
   
-  async getUsers({ tags }) {
-    const query = tags && { tags: { $in: tags } }
+  async getUsers({ phone }) {
+    typeof(phone) == 'string' ? phone = [phone] : phone;
+    const query = phone && { phone: { $in: phone } }
     const users = await this.mongoDB.getAll(this.collection, query)
     return users || []
   }
@@ -42,6 +43,10 @@ class UsersService {
 
   async updateUser({ userId, user } = {}) {
     await this.createEmailIndex()
+
+    const passdw = user.password
+    const hashPass = await bcrypt.hash(passdw, 10)
+    user.password = hashPass
 
     const updatedUserId = await this.mongoDB.update(
       this.collection,
