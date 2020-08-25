@@ -54,7 +54,7 @@ function usersApi(app) {
       }else{
         res.status(401).json({
           data: null,
-          message: 'Bad Request',
+          message: 'Duplicated User',
         });
       }
     }else{

@@ -2,6 +2,7 @@ const express = require("express");
 const passport = require("passport");
 const boom = require("@hapi/boom");
 const jwt = require("jsonwebtoken");
+const ArticlesServices = require('../services/articles');
 const api = express.Router();
 
 const { config } = require("../config");
@@ -12,6 +13,9 @@ require("../utils/auth/strategies/basic");
 api.post("/token", async function(req, res, next) {
 
   passport.authenticate("basic", async function(error, user) {
+    
+    const articlesService = new ArticlesServices();
+
     try {
       if (error || !user) {
         next(boom.unauthorized());
@@ -31,7 +35,9 @@ api.post("/token", async function(req, res, next) {
         }
 
         //Valdiación si tiene una prenda
-
+        const phoneOwner = user.phone;
+        const Articles = await articlesService.getArticles({phoneOwner});
+        const numArticles = Articles.length;
         const payload = { sub: user._id, email: user.email };
         const token = jwt.sign(payload, config.authJwtSecret, {
           expiresIn: "30m"
@@ -41,6 +47,7 @@ api.post("/token", async function(req, res, next) {
           { 
             access_token: token,
             user: user,
+            articles: numArticles
           }
         );
       });
