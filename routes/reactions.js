@@ -40,7 +40,7 @@ function reactionsApi(app) {
   });
 
   router.post('/', 
-              passport.authenticate("jwt", {session:false}),
+              //passport.authenticate("jwt", {session:false}),
               async function (req, res, next) {
     const { body: reaction } = req;
     let result = null
@@ -63,7 +63,8 @@ function reactionsApi(app) {
           const existMatch = await reactionsService.getReactionsMatch({reaction});
           if(existMatch !== 0){
             /**Hay un match */
-            /**Crear logica apra que inserte match en la base de datos */
+            /**Crear logica para que inserte match en la base de datos */
+            
             res.status(201).json({
               data: createReactionId,
               message,
@@ -84,7 +85,7 @@ function reactionsApi(app) {
   });
 
   router.delete('/:reactionId',
-              passport.authenticate("jwt", {session:false}),
+              //passport.authenticate("jwt", {session:false}),
               async function (req, res, next) {
     const { reactionId } = req.params;
     try {

@@ -71,7 +71,7 @@ function matchesApi(app) {
   });
 
   router.delete('/:matchId',
-              passport.authenticate("jwt", {session:false}),
+              //passport.authenticate("jwt", {session:false}),
               async function (req, res, next) {
     const { matchId } = req.params;
     try {
