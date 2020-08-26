@@ -18,6 +18,11 @@ class ArticlesService {
     return article || {}
   }
 
+  async getArticlesByCategory({category}){
+    const articles = await this.mongoDB.getByCategory(this.collection, category);
+    return articles || [];
+  }
+
   async createArticle({ article }) {
 
     try {      

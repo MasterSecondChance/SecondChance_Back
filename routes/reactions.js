@@ -1,6 +1,7 @@
 const express = require('express');
 const passport = require('passport');
 const ReactionsServices = require('../services/reactions');
+const MatchesServices = require('../services/matches');
 const { reactionSchema } = require('../schemas/reactions');
 require("../utils/auth/strategies/jwt");
 
@@ -10,6 +11,7 @@ function reactionsApi(app) {
   app.use('/api/reactions', router);
 
   const reactionsService = new ReactionsServices();
+  const matchesService = new MatchesServices();
 
   router.get('/',
              // passport.authenticate("jwt", {session:false}),
@@ -64,9 +66,10 @@ function reactionsApi(app) {
           if(existMatch !== 0){
             /**Hay un match */
             /**Crear logica para que inserte match en la base de datos */
-            
+            const createMatchId = await matchesService.createMatch({reaction});
             res.status(201).json({
               data: createReactionId,
+              matchId: createMatchId,
               message,
               match: 1,
             });

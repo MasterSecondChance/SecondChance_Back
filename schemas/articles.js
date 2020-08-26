@@ -29,7 +29,7 @@ const articleSchema = joi.object({
   gender: articleGenderSchema.required(),
   description: articledescriptionSchema.required(),
   color: articleColorSchema.required(),
-  date: articleDateSchema.required(),
+  date: articleDateSchema,
   urlPhoto: articleUrlSchema.required(),
   city: articleCitySchema.required(),
 });

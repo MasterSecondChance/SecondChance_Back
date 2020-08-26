@@ -3,6 +3,8 @@ const passport = require('passport');
 const ArticlesServices = require('../services/articles');
 const ReactionsServices = require('../services/reactions');
 const { articleSchema, updateArticleSchema } = require('../schemas/articles');
+const moment = require('moment');
+
 require("../utils/auth/strategies/jwt");
 
 function articlesApi(app) {
@@ -19,6 +21,21 @@ function articlesApi(app) {
     const { phoneOwner } = req.query;
     try {
       const articles = await articlesService.getArticles({ phoneOwner });
+      res.status(200).json({
+        data: articles,
+        message: 'articles listed',
+      });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.get('/categories/:category',
+             // passport.authenticate("jwt", {session:false}),
+              async function (req, res, next) {
+    const { category } = req.params;
+    try {
+      const articles = await articlesService.getArticlesByCategory({ category });
       res.status(200).json({
         data: articles,
         message: 'articles listed',
@@ -52,6 +69,8 @@ function articlesApi(app) {
               async function (req, res, next) {
     const { body: article } = req;
     let result = null
+    const now = moment();
+    article.date = now.format('MM/DD/YYYY HH:mm:ss A');
     result = articleSchema.validate(article)
 
     if (result.error) {

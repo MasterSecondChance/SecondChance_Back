@@ -17,9 +17,9 @@ class MatchesService {
     return match || {}
   }
 
-  async createMatch({ match }) {
+  async createMatch({ reaction }) {
+    try {
 
-    try {      
       const createMatchId = await this.mongoDB.create(this.collection, match)
       return createMatchId;
     } catch (error) {
