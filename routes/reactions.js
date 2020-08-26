@@ -11,7 +11,6 @@ function reactionsApi(app) {
   app.use('/api/reactions', router);
 
   const reactionsService = new ReactionsServices();
-  const matchesService = new MatchesServices();
 
   router.get('/',
              // passport.authenticate("jwt", {session:false}),
@@ -65,11 +64,8 @@ function reactionsApi(app) {
           const existMatch = await reactionsService.getReactionsMatch({reaction});
           if(existMatch !== 0){
             /**Hay un match */
-            /**Crear logica para que inserte match en la base de datos */
-            const createMatchId = await matchesService.createMatch({reaction});
             res.status(201).json({
               data: createReactionId,
-              matchId: createMatchId,
               message,
               match: 1,
             });

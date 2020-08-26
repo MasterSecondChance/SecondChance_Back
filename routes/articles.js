@@ -64,6 +64,21 @@ function articlesApi(app) {
     }
   });
 
+  /**Articles by ID without reaction */
+  router.get('/unreaction/:phoneUser', async function (req, res, next) {
+    const { phoneUser } = req.params;
+    try {
+      const idArticles = await reactionServices.getReactionsByPhoneUser({phoneUser});
+      const articles = await articlesService.getArticleswithReaction(idArticles, phoneUser);
+      res.status(200).json({
+        data: articles,
+        message: 'article without reaction retrieved',
+      });
+    } catch (err) {
+      next(err);
+    }
+  });
+
   router.post('/', 
               //passport.authenticate("jwt", {session:false}),
               async function (req, res, next) {

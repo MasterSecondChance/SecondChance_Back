@@ -1,5 +1,5 @@
 const MongoLib = require('../lib/mongo')
-
+const { ObjectID } = require('mongodb');
 class ArticlesService {
   constructor() {
     this.collection = 'articles'
@@ -12,6 +12,17 @@ class ArticlesService {
     const articles = await this.mongoDB.getAll(this.collection, query)
     return articles || []
   }
+
+  async getArticleswithReaction(idArticles, phoneUser) {
+    let list= [];
+    idArticles.forEach(element => {
+      list.push(ObjectID(element.idArticle));
+    });
+    const query = { _id: { $nin: list } , phoneOwner: { $ne : phoneUser } }
+    const articles = await this.mongoDB.getAll(this.collection, query);
+    return articles || []
+  }
+
 
   async getArticle( {articleId} ){
     const article = await this.mongoDB.get(this.collection, articleId);

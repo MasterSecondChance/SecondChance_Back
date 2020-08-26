@@ -12,6 +12,11 @@ class ReactionsService {
     return reactions || []
   }
 
+  async getReactionsByPhoneUser({ phoneUser }) {
+    const reactions = await this.mongoDB.getArticleByPhoneUser(this.collection, phoneUser)
+    return reactions || []
+  }
+
   async getReaction( {reactionId} ){
     const reaction = await this.mongoDB.get(this.collection, reactionId);
     return reaction || {}
