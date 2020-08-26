@@ -44,8 +44,9 @@ function usersApi(app) {
     let result = null
 
     const existUser = await usersService.getUserExist({phone});
-    result = userSchema.validate(user)
-    if (result.error || existUser.length !== 0) {
+    
+    result = userSchema.validate(user);
+    if (result.error || existUser !== '') {
       if(result.error){
         res.status(400).json({
           data: null,
@@ -60,14 +61,16 @@ function usersApi(app) {
     }else{
         try {
           const createUserId = await usersService.createUser({ user });
-          let message = 'user created'
-    
+          let message;
           if(!createUserId) {
-            message = 'Duplicated User'
+            message = 'Phone Duplicated'//'Duplicated User'
+          }else{
+            message = 'user created';
           }
     
           res.status(201).json({
             data: createUserId,
+            phone: user.phone,
             message,
           });
         } catch (err) {

@@ -21,12 +21,12 @@ class UsersService {
   
   async getUserExist({ phone }) {
     const userExist = await this.mongoDB.getByPhone(this.collection, phone)
-    return userExist || [];
+    return userExist || '';
   }
   
 
   async createUser({ user }) {
-    await this.createEmailIndex()
+    await this.createPhoneIndex()
 
     try {
 
@@ -42,7 +42,7 @@ class UsersService {
   }
 
   async updateUser({ userId, user } = {}) {
-    await this.createEmailIndex()
+    await this.createPhoneIndex()
 
     const passdw = user.password
     const hashPass = await bcrypt.hash(passdw, 10)
@@ -61,8 +61,8 @@ class UsersService {
     return deletedUserId
   }
 
-  async createEmailIndex() {
-    await this.mongoDB.createIndex(this.collection, { "email": 1 })
+  async createPhoneIndex() {
+    await this.mongoDB.createIndex(this.collection, { "phone": 1 })
   }
   
 }

@@ -15,7 +15,7 @@ api.post("/token", async function(req, res, next) {
   passport.authenticate("basic", async function(error, user) {
     
     const articlesService = new ArticlesServices();
-
+    console.log(user);
     try {
       if (error || !user) {
         next(boom.unauthorized());

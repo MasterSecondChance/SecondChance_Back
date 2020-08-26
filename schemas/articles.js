@@ -10,8 +10,10 @@ const articleConditionSchema = joi.string().max(15);
 const articledescriptionSchema = joi.string().max(120);
 const articleColorSchema = joi.string().max(30);
 const articleGenderSchema = joi.string().max(10);
-const articleDateSchema = joi.string().regex(/^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1]) (2[0-3]|[01][0-9]):[0-5][0-9]$/); // 01-12-2011 19:20 | 01/12/2011 19:20
-const articleUrlSchema = joi.string().regex(/^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$/);
+//const articleDateSchema = joi.string().regex(/^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1]) (2[0-3]|[01][0-9]):[0-5][0-9]$/); // 01-12-2011 19:20 | 01/12/2011 19:20
+const articleDateSchema = joi.string();
+//const articleUrlSchema = joi.string().regex(/^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$/);
+const articleUrlSchema = joi.string();
 const articleCitySchema = joi.string().trim().max(60);
 const articlePhoneOwnerSchema = joi.string().trim().regex(/^[0-9]{7,10}$/);
 
