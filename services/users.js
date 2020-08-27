@@ -19,8 +19,8 @@ class UsersService {
     return user || {}
   }
   
-  async getUserExist({ phone }) {
-    const userExist = await this.mongoDB.getByPhone(this.collection, phone)
+  async getUserExist(phone) {
+    const userExist = await this.mongoDB.getByPhone(this.collection, phone);
     return userExist || '';
   }
   

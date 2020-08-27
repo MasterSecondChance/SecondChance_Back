@@ -44,7 +44,11 @@ function matchesApi(app) {
               async function (req, res, next) {
     const { body: match } = req;
     let result = null;
-
+    var matchOwner = {};
+    matchOwner.phoneFirst = match.phoneSecond;
+    matchOwner.phoneSecond = match.phoneFirst;
+    matchOwner.urlChat = match.urlChat;
+    matchOwner.date = match.date;
     result = matchSchema.validate(match);
     if (result.error) {
       res.status(400).json({
@@ -53,10 +57,12 @@ function matchesApi(app) {
       })
     }else{
         try {
-          const createMatchId = await matchesService.createMatch({ match });
+          const createMatchId = await matchesService.createMatch(match);
+          const createMatchOwnerId = await matchesService.createMatch(matchOwner);
+
           let message = 'Match created'
     
-          if(!createMatchId) {
+          if(!createMatchId || !createMatchOwnerId) {
             message = 'Duplicated Match'
           }
     

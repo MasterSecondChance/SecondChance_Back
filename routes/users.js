@@ -43,7 +43,7 @@ function usersApi(app) {
     const phone = user.phone;
     let result = null
 
-    const existUser = await usersService.getUserExist({phone});
+    const existUser = await usersService.getUserExist(phone);
     
     result = userSchema.validate(user);
     if (result.error || existUser !== '') {

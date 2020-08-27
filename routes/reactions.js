@@ -2,6 +2,8 @@ const express = require('express');
 const passport = require('passport');
 const ReactionsServices = require('../services/reactions');
 const MatchesServices = require('../services/matches');
+const UsersServices = require('../services/users');
+const ArticlesServices = require('../services/articles');
 const { reactionSchema } = require('../schemas/reactions');
 require("../utils/auth/strategies/jwt");
 
@@ -11,6 +13,8 @@ function reactionsApi(app) {
   app.use('/api/reactions', router);
 
   const reactionsService = new ReactionsServices();
+  const usersServices = new UsersServices();
+  const articlesServices = new ArticlesServices();
 
   router.get('/',
              // passport.authenticate("jwt", {session:false}),
@@ -44,6 +48,8 @@ function reactionsApi(app) {
               //passport.authenticate("jwt", {session:false}),
               async function (req, res, next) {
     const { body: reaction } = req;
+    const phone = reaction.phoneOwner;
+    const phoneUser = reaction.phoneUser;
     let result = null
     result = reactionSchema.validate(reaction);
 
@@ -55,19 +61,33 @@ function reactionsApi(app) {
     }else{
         try {
           const createReactionId = await reactionsService.createReaction({ reaction });
-          let message = 'Reaction created'
-    
+          let message; 
+          let existMatch;
+          let dataOwner;
+          let dataUser;
+          let articleOwner;
           if(!createReactionId) {
             message = 'Duplicated Reaction'
+            existMatch = 0; 
+          }else{
+            var articleId = {};
+            articleId = reaction.idArticle;
+            articleOwner = await articlesServices.getArticle({articleId});
+            existMatch = await reactionsService.getReactionsMatch({reaction});
+            dataOwner = await usersServices.getUserExist(phone);
+            dataUser = await usersServices.getUserExist(phoneUser);
+            message = 'Reaction created';
           }
-
-          const existMatch = await reactionsService.getReactionsMatch({reaction});
-          if(existMatch !== 0){
+          if(existMatch.length !== 0){
             /**Hay un match */
             res.status(201).json({
               data: createReactionId,
               message,
               match: 1,
+              owner: dataOwner,
+              user: dataUser,
+              articleUser: articleOwner,
+              articleOwner: existMatch
             });
           }else{
             res.status(201).json({

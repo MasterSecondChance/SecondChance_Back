@@ -9,8 +9,23 @@ const images = require('./routes/images');
 const reactions = require('./routes/reactions');
 const authApiRouter = require('./routes/auth');
 
+const corsOpts = {
+  origin: '*',
+
+  methods: [
+    'GET',
+    'POST',
+    'PUT',
+    'DELETE'
+  ],
+
+  allowedHeaders: [
+    '*',
+  ],
+};
+
 app.use(express.json())
-app.use(cors())
+app.use(cors(corsOpts))
 
 users(app);
 articles(app);
