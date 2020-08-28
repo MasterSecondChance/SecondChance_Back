@@ -68,7 +68,7 @@ npm test
 
 ## Demo
 
-You can see the demo live [here](https://trode.netlify.app/).
+You can see the demo live [here](https://estaticos.elperiodico.com/resources/jpg/8/0/casi-anos-despues-creador-del-codigo-verde-matrix-desvela-significado-1508915513708.jpg).
 
 ### Preview
 
