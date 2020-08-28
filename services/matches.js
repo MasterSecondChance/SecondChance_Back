@@ -17,6 +17,11 @@ class MatchesService {
     return match || {}
   }
 
+  async getMatchesByPhone({phoneFirst}){
+    const match = await this.mongoDB.getMatchesByPhone(this.collection, phoneFirst);
+    return match || {}
+  }
+
   async createMatch( match ) {
     try {
 
@@ -27,9 +32,13 @@ class MatchesService {
     }
   }
 
-  async deleteMatch({ matchId }) {
-    const deletedMatchId = await this.mongoDB.delete(this.collection, matchId)
-    return deletedMatchId;
+  async deleteMatch({ phoneFirst, phoneSecond }) {
+    try{
+      const deletedMatchId = await this.mongoDB.deleteMatchByPhone(this.collection, phoneFirst, phoneSecond);
+      return deletedMatchId;
+    }catch(error){
+      return false
+    }
   }
   
 }

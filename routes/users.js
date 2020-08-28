@@ -25,7 +25,9 @@ function usersApi(app) {
     }
   });
 
-  router.get('/:userId', async function (req, res, next) {
+  router.get('/:userId',
+    passport.authenticate("jwt", {session:false}),
+    async function (req, res, next) {
     const { userId } = req.params;
     try {
       const user = await usersService.getUser({ userId });
@@ -80,7 +82,7 @@ function usersApi(app) {
   });
 
   router.put('/:userId',
-              //passport.authenticate("jwt", {session:false}),
+              passport.authenticate("jwt", {session:false}),
               async function (req, res, next) {
     const { userId } = req.params;
     const { body: user } = req;

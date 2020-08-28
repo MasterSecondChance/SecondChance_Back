@@ -45,7 +45,7 @@ function reactionsApi(app) {
   });
 
   router.post('/', 
-              //passport.authenticate("jwt", {session:false}),
+              passport.authenticate("jwt", {session:false}),
               async function (req, res, next) {
     const { body: reaction } = req;
     const phone = reaction.phoneOwner;
@@ -70,12 +70,16 @@ function reactionsApi(app) {
             message = 'Duplicated Reaction'
             existMatch = 0; 
           }else{
-            var articleId = {};
-            articleId = reaction.idArticle;
-            articleOwner = await articlesServices.getArticle({articleId});
-            existMatch = await reactionsService.getReactionsMatch({reaction});
-            dataOwner = await usersServices.getUserExist(phone);
-            dataUser = await usersServices.getUserExist(phoneUser);
+            if (reaction.type !== "DisLike"){
+              var articleId = {};
+              articleId = reaction.idArticle;
+              articleOwner = await articlesServices.getArticle({articleId});
+              existMatch = await reactionsService.getReactionsMatch({reaction});
+              dataOwner = await usersServices.getUserExist(phone);
+              dataUser = await usersServices.getUserExist(phoneUser);
+            }else{
+              existMatch = [];
+            }
             message = 'Reaction created';
           }
           if(existMatch.length !== 0){
@@ -86,8 +90,8 @@ function reactionsApi(app) {
               match: 1,
               owner: dataOwner,
               user: dataUser,
-              articleUser: articleOwner,
-              articleOwner: existMatch
+              articleOwner: articleOwner,
+              articleUser: existMatch
             });
           }else{
             res.status(201).json({

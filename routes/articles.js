@@ -16,7 +16,7 @@ function articlesApi(app) {
   const reactionServices = new ReactionsServices();
 
   router.get('/',
-             // passport.authenticate("jwt", {session:false}),
+              passport.authenticate("jwt", {session:false}),
               async function (req, res, next) {
     const { phoneOwner } = req.query;
     try {
@@ -31,7 +31,7 @@ function articlesApi(app) {
   });
 
   router.get('/categories/:category',
-             // passport.authenticate("jwt", {session:false}),
+             passport.authenticate("jwt", {session:false}),
               async function (req, res, next) {
     const { category } = req.params;
     try {
@@ -65,7 +65,9 @@ function articlesApi(app) {
   });
 
   /**Articles by ID without reaction */
-  router.get('/unreaction/:phoneUser', async function (req, res, next) {
+  router.get('/unreaction/:phoneUser', 
+        passport.authenticate("jwt", {session:false}),
+        async function (req, res, next) {
     const { phoneUser } = req.params;
     try {
       const idArticles = await reactionServices.getReactionsByPhoneUser({phoneUser});
@@ -113,7 +115,7 @@ function articlesApi(app) {
   });
 
   router.put('/:articleId',
-              //passport.authenticate("jwt", {session:false}),
+              passport.authenticate("jwt", {session:false}),
               async function (req, res, next) {
     const { articleId } = req.params;
     const { body: article } = req;

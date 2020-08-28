@@ -1,7 +1,7 @@
+const cors = require("cors")
 const express = require('express')
 const app = express()
 const { config } = require('./config')
-const cors = require("cors")
 const users = require('./routes/users.js');
 const articles = require('./routes/articles.js');
 const matches = require('./routes/matches');

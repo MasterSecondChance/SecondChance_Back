@@ -43,10 +43,12 @@ class UsersService {
 
   async updateUser({ userId, user } = {}) {
     await this.createPhoneIndex()
-
-    const passdw = user.password
-    const hashPass = await bcrypt.hash(passdw, 10)
-    user.password = hashPass
+    
+    if(user.password){
+      const passdw = user.password
+      const hashPass = await bcrypt.hash(passdw, 10)
+      user.password = hashPass
+    }    
 
     const updatedUserId = await this.mongoDB.update(
       this.collection,

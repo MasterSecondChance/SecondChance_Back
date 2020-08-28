@@ -39,14 +39,33 @@ function matchesApi(app) {
     }
   });
 
+  router.get('/phone/:phoneFirst', async function (req, res, next) {
+    const { phoneFirst } = req.params;
+    try {
+      const matches = await matchesService.getMatchesByPhone({ phoneFirst });
+      res.status(200).json({
+        data: matches,
+        message: 'Match retrieved',
+      });
+    } catch (err) {
+      next(err);
+    }
+  });
+
   router.post('/', 
-              //passport.authenticate("jwt", {session:false}),
+              passport.authenticate("jwt", {session:false}),
               async function (req, res, next) {
     const { body: match } = req;
     let result = null;
     var matchOwner = {};
+    matchOwner.nameFirst = match.nameSecond;
     matchOwner.phoneFirst = match.phoneSecond;
+    matchOwner.urlPhotoArticleFirst = match.urlPhotoArticleSecond;
+    matchOwner.firstArticleName = match.secondArticleName;
+    matchOwner.nameSecond =  match.nameFirst;
     matchOwner.phoneSecond = match.phoneFirst;
+    matchOwner.urlPhotoArticleSecond = match.urlPhotoArticleFirst;
+    matchOwner.secondArticleName = match.firstArticleName;
     matchOwner.urlChat = match.urlChat;
     matchOwner.date = match.date;
     result = matchSchema.validate(match);
@@ -76,14 +95,14 @@ function matchesApi(app) {
     }
   });
 
-  router.delete('/:matchId',
-              //passport.authenticate("jwt", {session:false}),
+  router.delete('/:phoneFirst/:phoneSecond',
+              passport.authenticate("jwt", {session:false}),
               async function (req, res, next) {
-    const { matchId } = req.params;
+    const { phoneFirst, phoneSecond } = req.params;
     try {
-      const deleteMatchId = await matchesService.deleteMatch({ matchId });
+      const deleteMatchPhone = await matchesService.deleteMatch({ phoneFirst, phoneSecond });
       res.status(200).json({
-        data: deleteMatchId,
+        data: deleteMatchPhone,
         message: 'Match deleted',
       });
     } catch (err) {

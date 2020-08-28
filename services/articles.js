@@ -25,7 +25,6 @@ class ArticlesService {
 
 
   async getArticle( {articleId} ){
-    console.log(articleId);
     const article = await this.mongoDB.get(this.collection, articleId);
     return article || {}
   }

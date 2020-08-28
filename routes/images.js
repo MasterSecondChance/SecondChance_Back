@@ -39,7 +39,6 @@ function imagesApi(app) {
     });
 
     router.post("/", 
-              //passport.authenticate("jwt", {session:false}), 
               function (req, res, next) {
         try {
             singleUpload(req, res, async function (err) {
