@@ -30,12 +30,13 @@ function articlesApi(app) {
     }
   });
 
-  router.get('/categories/:category',
+  router.get('/categories/:category/:phoneUser',
              passport.authenticate("jwt", {session:false}),
               async function (req, res, next) {
-    const { category } = req.params;
+    const { category, phoneUser} = req.params;
     try {
-      const articles = await articlesService.getArticlesByCategory({ category });
+      const idArticles = await reactionServices.getReactionsByPhoneUser({phoneUser});
+      const articles = await articlesService.getArticlesByCategory({ category }, idArticles, phoneUser);
       res.status(200).json({
         data: articles,
         message: 'articles listed',

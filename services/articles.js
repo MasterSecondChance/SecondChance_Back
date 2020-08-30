@@ -29,8 +29,13 @@ class ArticlesService {
     return article || {}
   }
 
-  async getArticlesByCategory({category}){
-    const articles = await this.mongoDB.getByCategory(this.collection, category);
+  async getArticlesByCategory({category}, idArticles, phoneUser){
+    let list= [];
+    idArticles.forEach(element => {
+      list.push(ObjectID(element.idArticle));
+    });
+    const query = { _id: { $nin: list } , phoneOwner: { $ne : phoneUser }, type: category}
+    const articles = await this.mongoDB.getByCategory(this.collection, query);
     return articles || [];
   }
 

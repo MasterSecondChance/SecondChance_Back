@@ -27,13 +27,14 @@ class UsersService {
 
   async createUser({ user }) {
     await this.createPhoneIndex()
+    console.log({user});
 
     try {
 
       const passdw = user.password
       const hashPass = await bcrypt.hash(passdw, 10)
       user.password = hashPass
-      
+      console.log(user);
       const createUserId = await this.mongoDB.create(this.collection, user)
       return createUserId
     } catch (error) {
