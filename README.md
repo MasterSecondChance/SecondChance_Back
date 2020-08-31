@@ -84,7 +84,7 @@ You can see the demo live [here](trode.netlify.app/).
 - Andrés Felipe Carrión
 - Andrés Felipe Chávez
 - Felipe Merchán
-- Luis Carrión
+- Luis Ruiz
 
 ## **License**
 
