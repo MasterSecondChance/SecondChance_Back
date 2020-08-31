@@ -50,6 +50,8 @@ npm run start
 ### Testing
 ```jsx
 npm run test
+npm run cover
+npm run report
 ```
 
 ## Stack
@@ -64,7 +66,10 @@ npm run test
 - Passport
 - MongoDB
 - UUID
-- Cloudinary
+- AWS - S3
+- Mocha
+- nyc
+- SuperTest
 
 ## Demo
 
