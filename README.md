@@ -49,7 +49,7 @@ npm run start
 
 ### Testing
 ```jsx
-npm test
+npm run test
 ```
 
 ## Stack
