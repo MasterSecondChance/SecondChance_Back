@@ -65,7 +65,6 @@ npm run report
 - Express
 - Passport
 - MongoDB
-- UUID
 - AWS - S3
 - Mocha
 - nyc
