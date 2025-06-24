@@ -7,7 +7,7 @@ require("../utils/auth/strategies/jwt");
 function matchesApi(app) {
     
   const router = express.Router();
-  app.use('/api/matches', router);
+  app.use('/matches', router);
 
   const matchesService = new MatchesServices();
 

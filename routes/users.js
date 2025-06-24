@@ -6,7 +6,7 @@ require("../utils/auth/strategies/jwt");
 
 function usersApi(app) {
   const router = express.Router();
-  app.use('/api/users', router);
+  app.use('/users', router);
 
   const usersService = new UsersService();
 

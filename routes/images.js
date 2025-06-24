@@ -11,7 +11,7 @@ require("../utils/auth/strategies/jwt");
 function imagesApi(app) {
 
     const router = express.Router();
-    app.use('/api/images', router);
+    app.use('/images', router);
 
      router.get("/", async function(req, res, next){
          try {

@@ -10,7 +10,7 @@ require("../utils/auth/strategies/jwt");
 function reactionsApi(app) {
     
   const router = express.Router();
-  app.use('/api/reactions', router);
+  app.use('/reactions', router);
 
   const reactionsService = new ReactionsServices();
   const usersServices = new UsersServices();
