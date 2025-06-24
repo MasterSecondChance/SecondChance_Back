@@ -1,7 +1,7 @@
 {
-  "name": "secondchance_back",
+  "name": "troud",
   "version": "1.0.0",
-  "description": "Backend de Tinder Ropa",
+  "description": "Backend de aplicación Troud para intercambio de ropa",
   "main": "index.js",
   "dependencies": {
     "@hapi/boom": "^9.1.0",
@@ -18,7 +18,9 @@
     "multer-s3": "^2.9.0",
     "passport": "^0.4.1",
     "passport-http": "^0.3.0",
-    "passport-jwt": "^4.0.0"
+    "passport-jwt": "^4.0.0",
+    "swagger-ui-express": "^5.0.1",
+    "yamljs": "^0.3.0"
   },
   "devDependencies": {
     "chalk": "^4.1.0",
@@ -42,16 +44,22 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MasterSecondChance/SecondChance_Back.git"
+    "url": "git+https://github.com/personal/troud.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/MasterSecondChance/SecondChance_Back/issues"
+    "url": "https://github.com/personal/troud/issues"
   },
-  "homepage": "https://github.com/MasterSecondChance/SecondChance_Back#readme",
-  "nyc":{
+  "homepage": "https://github.com/personal/troud#readme",
+  "nyc": {
     "all": true,
-    "include": ["routes","services", "lib","utils", "schemas"]
+    "include": [
+      "routes",
+      "services",
+      "lib",
+      "utils",
+      "schemas"
+    ]
   }
 }
