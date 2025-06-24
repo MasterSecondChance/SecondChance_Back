@@ -1,6 +1,5 @@
 const passport = require("passport");
 const { Strategy, ExtractJwt } = require("passport-jwt");
-const boom = require("@hapi/boom");
 const { config } = require("../../../config");
 const MongoLib = require("../../../lib/mongo");
 
@@ -19,7 +18,9 @@ passport.use(
         });
 
         if (!user) {
-          return cb(boom.unauthorized(), false);
+          const error = new Error('Unauthorized');
+          error.statusCode = 401;
+          return cb(error, false);
         }
 
         return cb(null, user);
