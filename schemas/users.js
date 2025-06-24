@@ -1,4 +1,4 @@
-const joi = require('@hapi/joi')
+const joi = require('joi')
 
 const mongoIdSchema = joi.string().regex(/^[0-9a-fA-F]{24}$/);
 const userNameSchema = joi.string().max(120);

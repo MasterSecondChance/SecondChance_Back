@@ -1,0 +1,1396 @@
+openapi: 3.0.3
+info:
+  title: Troud API
+  description: |
+    **Troud** es una aplicación backend tipo "Tinder" para intercambio de ropa que permite a los usuarios buscar, encontrar e intercambiar prendas de vestir.
+    
+    ## Características Principales
+    - Gestión de usuarios con autenticación JWT
+    - CRUD completo de artículos de ropa
+    - Sistema de reacciones (Like, SuperLike, DisLike)
+    - Sistema de matches automático
+    - Subida de imágenes a AWS S3
+    
+    ## Autenticación
+    La API utiliza dos tipos de autenticación:
+    - **Basic Auth**: Para obtener el token inicial (username=phone, password=password)
+    - **JWT Bearer**: Para endpoints protegidos (Header: `Authorization: Bearer <token>`)
+  version: 1.0.0
+  contact:
+    name: Troud Team
+    url: https://github.com/personal/troud
+  license:
+    name: ISC
+
+servers:
+  - url: http://localhost:8000
+    description: Servidor de desarrollo local
+  - url: https://troud.vercel.app
+    description: Servidor de producción
+
+tags:
+  - name: Authentication
+    description: Endpoints de autenticación
+  - name: Users
+    description: Gestión de usuarios
+  - name: Articles
+    description: Gestión de artículos de ropa
+  - name: Reactions
+    description: Sistema de reacciones (likes/dislikes)
+  - name: Matches
+    description: Sistema de matches
+  - name: Images
+    description: Subida y gestión de imágenes
+
+paths:
+  /:
+    get:
+      summary: Endpoint raíz
+      description: Información general de la API
+      responses:
+        '200':
+          description: Información de la API
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Welcome to Troud API"
+                  version:
+                    type: string
+                    example: "1.0.0"
+                  documentation:
+                    type: string
+                    example: "/api-docs"
+                  endpoints:
+                    type: object
+
+  /api/auth/token:
+    post:
+      tags:
+        - Authentication
+      summary: Obtener token JWT
+      description: Autenticar usuario y obtener token de acceso
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Token obtenido exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                    description: Token JWT
+                  user:
+                    $ref: '#/components/schemas/User'
+                  articles:
+                    type: integer
+                    description: Número de artículos del usuario
+        '401':
+          description: Credenciales incorrectas
+
+  /api/users:
+    get:
+      tags:
+        - Users
+      summary: Listar usuarios
+      description: Obtener lista de usuarios con filtro opcional por teléfono
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: phone
+          in: query
+          description: Filtrar por número de teléfono
+          required: false
+          schema:
+            type: string
+            pattern: '^[0-9]{7,10}$'
+      responses:
+        '200':
+          description: Lista de usuarios
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                  message:
+                    type: string
+                    example: "users listed"
+    
+    post:
+      tags:
+        - Users
+      summary: Crear nuevo usuario
+      description: Registrar un nuevo usuario en el sistema
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: Usuario creado exitosamente
+        '400':
+          description: Datos de entrada inválidos
+        '401':
+          description: Usuario duplicado
+
+  /api/users/{userId}:
+    get:
+      tags:
+        - Users
+      summary: Obtener usuario por ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: ID del usuario
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Usuario encontrado
+    
+    put:
+      tags:
+        - Users
+      summary: Actualizar usuario
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: ID del usuario
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: Usuario actualizado
+    
+    delete:
+      tags:
+        - Users
+      summary: Eliminar usuario
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: ID del usuario
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Usuario eliminado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                    description: ID del usuario eliminado
+                  message:
+                    type: string
+                    example: "users deleted"
+
+  /api/articles:
+    get:
+      tags:
+        - Articles
+      summary: Listar artículos
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: phoneOwner
+          in: query
+          description: Filtrar por teléfono del propietario
+          required: false
+          schema:
+            type: string
+            pattern: '^[0-9]{7,10}$'
+      responses:
+        '200':
+          description: Lista de artículos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Article'
+                  message:
+                    type: string
+                    example: "articles listed"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    
+    post:
+      tags:
+        - Articles
+      summary: Crear nuevo artículo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateArticleRequest'
+      responses:
+        '201':
+          description: Artículo creado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                    description: ID del artículo creado
+                  message:
+                    type: string
+                    example: "Article created"
+        '400':
+          description: Datos de entrada inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/articles/{articleId}:
+    get:
+      tags:
+        - Articles
+      summary: Obtener artículo por ID
+      parameters:
+        - name: articleId
+          in: path
+          required: true
+          description: ID del artículo
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Artículo encontrado con estadísticas de reacciones
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Article'
+                  like:
+                    type: integer
+                    description: Número de likes
+                  superLikes:
+                    type: integer
+                    description: Número de superlikes
+                  dislikes:
+                    type: integer
+                    description: Número de dislikes
+                  message:
+                    type: string
+                    example: "article retrieved"
+    
+    put:
+      tags:
+        - Articles
+      summary: Actualizar artículo
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: articleId
+          in: path
+          required: true
+          description: ID del artículo
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateArticleRequest'
+      responses:
+        '200':
+          description: Artículo actualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                    description: ID del artículo actualizado
+                  message:
+                    type: string
+                    example: "Article updated"
+        '400':
+          description: Datos de entrada inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    
+    delete:
+      tags:
+        - Articles
+      summary: Eliminar artículo
+      parameters:
+        - name: articleId
+          in: path
+          required: true
+          description: ID del artículo
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Artículo eliminado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                    description: ID del artículo eliminado
+                  message:
+                    type: string
+                    example: "Article deleted"
+
+  /api/articles/categories/{category}/{phoneUser}:
+    get:
+      tags:
+        - Articles
+      summary: Obtener artículos por categoría
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: category
+          in: path
+          required: true
+          description: Categoría del artículo
+          schema:
+            type: string
+            maxLength: 60
+        - name: phoneUser
+          in: path
+          required: true
+          description: Teléfono del usuario
+          schema:
+            type: string
+            pattern: '^[0-9]{7,10}$'
+      responses:
+        '200':
+          description: Lista de artículos por categoría
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Article'
+                  message:
+                    type: string
+                    example: "articles listed"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/articles/unreaction/{phoneUser}:
+    get:
+      tags:
+        - Articles
+      summary: Obtener artículos sin reacción
+      description: Obtiene artículos que el usuario no ha reaccionado
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: phoneUser
+          in: path
+          required: true
+          description: Teléfono del usuario
+          schema:
+            type: string
+            pattern: '^[0-9]{7,10}$'
+      responses:
+        '200':
+          description: Lista de artículos sin reacción
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Article'
+                  message:
+                    type: string
+                    example: "article without reaction retrieved"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/reactions:
+    get:
+      tags:
+        - Reactions
+      summary: Listar reacciones
+      parameters:
+        - name: tags
+          in: query
+          description: Filtros adicionales
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista de reacciones
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Reaction'
+                  message:
+                    type: string
+                    example: "reaction listed"
+    
+    post:
+      tags:
+        - Reactions
+      summary: Crear nueva reacción
+      description: Crear una reacción (Like, SuperLike, DisLike) a un artículo. Si hay match, se retorna información adicional.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReactionRequest'
+      responses:
+        '201':
+          description: Reacción creada exitosamente
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: object
+                    description: Reacción sin match
+                    properties:
+                      data:
+                        type: string
+                        description: ID de la reacción creada
+                      message:
+                        type: string
+                        example: "Reaction created"
+                      match:
+                        type: integer
+                        example: 0
+                  - type: object
+                    description: Reacción con match
+                    properties:
+                      data:
+                        type: string
+                        description: ID de la reacción creada
+                      message:
+                        type: string
+                        example: "Reaction created"
+                      match:
+                        type: integer
+                        example: 1
+                      owner:
+                        $ref: '#/components/schemas/User'
+                      user:
+                        $ref: '#/components/schemas/User'
+                      articleOwner:
+                        $ref: '#/components/schemas/Article'
+                      articleUser:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Reaction'
+        '400':
+          description: Datos de entrada inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/reactions/{reactionId}:
+    get:
+      tags:
+        - Reactions
+      summary: Obtener reacción por ID
+      parameters:
+        - name: reactionId
+          in: path
+          required: true
+          description: ID de la reacción
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Reacción encontrada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Reaction'
+                  message:
+                    type: string
+                    example: "reaction retrieved"
+    
+    delete:
+      tags:
+        - Reactions
+      summary: Eliminar reacción
+      parameters:
+        - name: reactionId
+          in: path
+          required: true
+          description: ID de la reacción
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Reacción eliminada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                    description: ID de la reacción eliminada
+                  message:
+                    type: string
+                    example: "Reaction deleted"
+
+  /api/matches:
+    get:
+      tags:
+        - Matches
+      summary: Listar matches
+      parameters:
+        - name: tags
+          in: query
+          description: Filtros adicionales
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista de matches
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Match'
+                  message:
+                    type: string
+                    example: "Matches listed"
+    
+    post:
+      tags:
+        - Matches
+      summary: Crear nuevo match
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMatchRequest'
+      responses:
+        '201':
+          description: Match creado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                    description: ID del match creado
+                  message:
+                    type: string
+                    example: "Match created"
+        '400':
+          description: Datos de entrada inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/matches/{matchId}:
+    get:
+      tags:
+        - Matches
+      summary: Obtener match por ID
+      parameters:
+        - name: matchId
+          in: path
+          required: true
+          description: ID del match
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Match encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Match'
+                  message:
+                    type: string
+                    example: "Match retrieved"
+
+  /api/matches/phone/{phoneFirst}:
+    get:
+      tags:
+        - Matches
+      summary: Obtener matches por teléfono
+      parameters:
+        - name: phoneFirst
+          in: path
+          required: true
+          description: Teléfono del usuario
+          schema:
+            type: string
+            pattern: '^[0-9]{7,10}$'
+      responses:
+        '200':
+          description: Lista de matches del usuario
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Match'
+                  message:
+                    type: string
+                    example: "Match retrieved"
+
+  /api/matches/{phoneFirst}/{phoneSecond}:
+    delete:
+      tags:
+        - Matches
+      summary: Eliminar match
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: phoneFirst
+          in: path
+          required: true
+          description: Teléfono del primer usuario
+          schema:
+            type: string
+            pattern: '^[0-9]{7,10}$'
+        - name: phoneSecond
+          in: path
+          required: true
+          description: Teléfono del segundo usuario
+          schema:
+            type: string
+            pattern: '^[0-9]{7,10}$'
+      responses:
+        '200':
+          description: Match eliminado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                    description: Teléfono del usuario
+                  message:
+                    type: string
+                    example: "Match deleted"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/images:
+    get:
+      tags:
+        - Images
+      summary: Listar imágenes
+      responses:
+        '200':
+          description: Lista de imágenes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Image'
+                  message:
+                    type: string
+                    example: "Images listed"
+    
+    post:
+      tags:
+        - Images
+      summary: Subir nueva imagen
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: Archivo de imagen a subir
+      responses:
+        '201':
+          description: Imagen subida exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                    description: ID de la imagen creada
+                  path:
+                    type: object
+                    properties:
+                      profilePicture:
+                        type: string
+                        description: URL de la imagen subida
+                  message:
+                    type: string
+                    example: "image created"
+        '400':
+          description: Error al subir la imagen
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  errors:
+                    type: object
+                    properties:
+                      title:
+                        type: string
+                        example: "Image Upload Error"
+                      detail:
+                        type: string
+                        description: Descripción del error
+                      error:
+                        type: object
+                        description: Objeto de error detallado
+
+  /api/images/{imageId}:
+    get:
+      tags:
+        - Images
+      summary: Obtener imagen por ID
+      parameters:
+        - name: imageId
+          in: path
+          required: true
+          description: ID de la imagen
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Imagen encontrada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Image'
+                  message:
+                    type: string
+                    example: "image retrieved"
+
+components:
+  securitySchemes:
+    BasicAuth:
+      type: http
+      scheme: basic
+      description: Autenticación básica usando teléfono como username y contraseña
+    
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token JWT obtenido del endpoint /api/auth/token
+
+  responses:
+    Unauthorized:
+      description: Token de acceso faltante o inválido
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: ID único del usuario
+          example: "507f1f77bcf86cd799439011"
+        userName:
+          type: string
+          maxLength: 120
+          description: Nombre de usuario
+          example: "Juan Pérez"
+        email:
+          type: string
+          format: email
+          description: Email del usuario
+          example: "juan.perez@email.com"
+        phone:
+          type: string
+          pattern: '^[0-9]{7,10}$'
+          description: Número de teléfono
+          example: "3001234567"
+        urlPhoto:
+          type: string
+          description: URL de la foto de perfil
+          example: "https://s3.amazonaws.com/bucket/profile.jpg"
+        profileId:
+          type: string
+          description: ID de perfil opcional
+          example: "507f1f77bcf86cd799439012"
+
+    CreateUserRequest:
+      type: object
+      required:
+        - userName
+        - password
+        - phone
+        - urlPhoto
+      properties:
+        userName:
+          type: string
+          maxLength: 120
+          description: Nombre de usuario
+          example: "Juan Pérez"
+        email:
+          type: string
+          format: email
+          description: Email del usuario
+          example: "juan.perez@email.com"
+        password:
+          type: string
+          pattern: '^(?=\w*\d)(?=\w*[A-Z])(?=\w*[a-z])\S{8,}$'
+          description: Contraseña (mín 8 chars, debe incluir mayúscula, minúscula y número)
+          example: "MiPassword123"
+        phone:
+          type: string
+          pattern: '^[0-9]{7,10}$'
+          description: Número de teléfono único
+          example: "3001234567"
+        urlPhoto:
+          type: string
+          description: URL de la foto de perfil
+          example: "https://s3.amazonaws.com/bucket/profile.jpg"
+        profileId:
+          type: string
+          description: ID de perfil opcional
+          example: "507f1f77bcf86cd799439012"
+
+    UpdateUserRequest:
+      type: object
+      required:
+        - phone
+      properties:
+        userName:
+          type: string
+          maxLength: 120
+          description: Nombre de usuario
+          example: "Juan Pérez"
+        email:
+          type: string
+          format: email
+          description: Email del usuario
+          example: "juan.perez@email.com"
+        password:
+          type: string
+          pattern: '^(?=\w*\d)(?=\w*[A-Z])(?=\w*[a-z])\S{8,}$'
+          description: Nueva contraseña
+          example: "NuevaPassword123"
+        phone:
+          type: string
+          pattern: '^[0-9]{7,10}$'
+          description: Número de teléfono
+          example: "3001234567"
+        urlPhoto:
+          type: string
+          description: URL de la foto de perfil
+          example: "https://s3.amazonaws.com/bucket/profile.jpg"
+        profileId:
+          type: string
+          description: ID de perfil opcional
+          example: "507f1f77bcf86cd799439012"
+
+    Article:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: ID único del artículo
+          example: "507f1f77bcf86cd799439013"
+        phoneOwner:
+          type: string
+          pattern: '^[0-9]{7,10}$'
+          description: Teléfono del propietario
+          example: "3001234567"
+        idOwner:
+          type: string
+          description: ID del propietario
+          example: "507f1f77bcf86cd799439011"
+        type:
+          type: string
+          maxLength: 60
+          description: Tipo de prenda
+          example: "Camiseta"
+        size:
+          type: string
+          maxLength: 10
+          description: Talla
+          example: "M"
+        name:
+          type: string
+          maxLength: 60
+          description: Nombre del artículo
+          example: "Camiseta Nike Deportiva"
+        brand:
+          type: string
+          maxLength: 60
+          description: Marca
+          example: "Nike"
+        condition:
+          type: string
+          maxLength: 15
+          description: Estado de la prenda
+          example: "Usado - Buen estado"
+        gender:
+          type: string
+          maxLength: 10
+          description: Género
+          example: "Unisex"
+        description:
+          type: string
+          maxLength: 120
+          description: Descripción detallada
+          example: "Camiseta deportiva en excelente estado, ideal para ejercicio"
+        color:
+          type: string
+          maxLength: 30
+          description: Color principal
+          example: "Azul"
+        date:
+          type: string
+          description: Fecha de creación
+          example: "12/15/2023 10:30:25 AM"
+        urlPhoto:
+          type: string
+          description: URL de la foto del artículo
+          example: "https://s3.amazonaws.com/bucket/article.jpg"
+        city:
+          type: string
+          maxLength: 60
+          description: Ciudad donde se encuentra
+          example: "Bogotá"
+
+    CreateArticleRequest:
+      type: object
+      required:
+        - phoneOwner
+        - idOwner
+        - type
+        - size
+        - name
+        - brand
+        - condition
+        - gender
+        - description
+        - color
+        - urlPhoto
+        - city
+      properties:
+        phoneOwner:
+          type: string
+          pattern: '^[0-9]{7,10}$'
+          description: Teléfono del propietario
+          example: "3001234567"
+        idOwner:
+          type: string
+          description: ID del propietario
+          example: "507f1f77bcf86cd799439011"
+        type:
+          type: string
+          maxLength: 60
+          description: Tipo de prenda
+          example: "Camiseta"
+        size:
+          type: string
+          maxLength: 10
+          description: Talla
+          example: "M"
+        name:
+          type: string
+          maxLength: 60
+          description: Nombre del artículo
+          example: "Camiseta Nike Deportiva"
+        brand:
+          type: string
+          maxLength: 60
+          description: Marca
+          example: "Nike"
+        condition:
+          type: string
+          maxLength: 15
+          description: Estado de la prenda
+          example: "Usado - Buen estado"
+        gender:
+          type: string
+          maxLength: 10
+          description: Género
+          example: "Unisex"
+        description:
+          type: string
+          maxLength: 120
+          description: Descripción detallada
+          example: "Camiseta deportiva en excelente estado, ideal para ejercicio"
+        color:
+          type: string
+          maxLength: 30
+          description: Color principal
+          example: "Azul"
+        urlPhoto:
+          type: string
+          description: URL de la foto del artículo
+          example: "https://s3.amazonaws.com/bucket/article.jpg"
+        city:
+          type: string
+          maxLength: 60
+          description: Ciudad donde se encuentra
+          example: "Bogotá"
+
+    UpdateArticleRequest:
+      type: object
+      properties:
+        phoneOwner:
+          type: string
+          pattern: '^[0-9]{7,10}$'
+          description: Teléfono del propietario
+          example: "3001234567"
+        idOwner:
+          type: string
+          description: ID del propietario
+          example: "507f1f77bcf86cd799439011"
+        type:
+          type: string
+          maxLength: 60
+          description: Tipo de prenda
+          example: "Camiseta"
+        size:
+          type: string
+          maxLength: 10
+          description: Talla
+          example: "M"
+        name:
+          type: string
+          maxLength: 60
+          description: Nombre del artículo
+          example: "Camiseta Nike Deportiva"
+        brand:
+          type: string
+          maxLength: 60
+          description: Marca
+          example: "Nike"
+        condition:
+          type: string
+          maxLength: 15
+          description: Estado de la prenda
+          example: "Usado - Buen estado"
+        gender:
+          type: string
+          maxLength: 10
+          description: Género
+          example: "Unisex"
+        description:
+          type: string
+          maxLength: 120
+          description: Descripción detallada
+          example: "Camiseta deportiva en excelente estado, ideal para ejercicio"
+        color:
+          type: string
+          maxLength: 30
+          description: Color principal
+          example: "Azul"
+        date:
+          type: string
+          description: Fecha de actualización
+          example: "12/15/2023 10:30:25 AM"
+        urlPhoto:
+          type: string
+          description: URL de la foto del artículo
+          example: "https://s3.amazonaws.com/bucket/article.jpg"
+        city:
+          type: string
+          maxLength: 60
+          description: Ciudad donde se encuentra
+          example: "Bogotá"
+
+    Reaction:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: ID único de la reacción
+          example: "507f1f77bcf86cd799439014"
+        phoneUser:
+          type: string
+          pattern: '^[0-9]{7,10}$'
+          description: Teléfono del usuario que reacciona
+          example: "3001234567"
+        phoneOwner:
+          type: string
+          pattern: '^[0-9]{7,10}$'
+          description: Teléfono del propietario del artículo
+          example: "3007654321"
+        idArticle:
+          type: string
+          description: ID del artículo al que se reacciona
+          example: "507f1f77bcf86cd799439013"
+        type:
+          type: string
+          enum:
+            - Like
+            - SuperLike
+            - DisLike
+          description: Tipo de reacción
+          example: "Like"
+
+    CreateReactionRequest:
+      type: object
+      required:
+        - phoneUser
+        - phoneOwner
+        - idArticle
+        - type
+      properties:
+        phoneUser:
+          type: string
+          pattern: '^[0-9]{7,10}$'
+          description: Teléfono del usuario que reacciona
+          example: "3001234567"
+        phoneOwner:
+          type: string
+          pattern: '^[0-9]{7,10}$'
+          description: Teléfono del propietario del artículo
+          example: "3007654321"
+        idArticle:
+          type: string
+          description: ID del artículo al que se reacciona
+          example: "507f1f77bcf86cd799439013"
+        type:
+          type: string
+          enum:
+            - Like
+            - SuperLike
+            - DisLike
+          description: Tipo de reacción
+          example: "Like"
+
+    Match:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: ID único del match
+          example: "507f1f77bcf86cd799439015"
+        phoneFirst:
+          type: string
+          pattern: '^[0-9]{7,10}$'
+          description: Teléfono del primer usuario
+          example: "3001234567"
+        nameFirst:
+          type: string
+          description: Nombre del primer usuario
+          example: "Juan Pérez"
+        phoneSecond:
+          type: string
+          pattern: '^[0-9]{7,10}$'
+          description: Teléfono del segundo usuario
+          example: "3007654321"
+        nameSecond:
+          type: string
+          description: Nombre del segundo usuario
+          example: "María García"
+        urlPhotoArticleFirst:
+          type: string
+          description: URL de la foto del artículo del primer usuario
+          example: "https://s3.amazonaws.com/bucket/article1.jpg"
+        urlPhotoArticleSecond:
+          type: string
+          description: URL de la foto del artículo del segundo usuario
+          example: "https://s3.amazonaws.com/bucket/article2.jpg"
+        firstArticleName:
+          type: string
+          description: Nombre del artículo del primer usuario
+          example: "Camiseta Nike"
+        secondArticleName:
+          type: string
+          description: Nombre del artículo del segundo usuario
+          example: "Jeans Levi's"
+        urlChat:
+          type: string
+          description: URL del chat de WhatsApp
+          example: "https://wa.me/3001234567"
+        date:
+          type: string
+          description: Fecha del match
+          example: "12/15/2023 10:30:25 AM"
+
+    CreateMatchRequest:
+      type: object
+      required:
+        - phoneFirst
+        - nameFirst
+        - phoneSecond
+        - nameSecond
+        - urlPhotoArticleFirst
+        - urlPhotoArticleSecond
+        - firstArticleName
+        - secondArticleName
+        - urlChat
+        - date
+      properties:
+        phoneFirst:
+          type: string
+          pattern: '^[0-9]{7,10}$'
+          description: Teléfono del primer usuario
+          example: "3001234567"
+        nameFirst:
+          type: string
+          description: Nombre del primer usuario
+          example: "Juan Pérez"
+        phoneSecond:
+          type: string
+          pattern: '^[0-9]{7,10}$'
+          description: Teléfono del segundo usuario
+          example: "3007654321"
+        nameSecond:
+          type: string
+          description: Nombre del segundo usuario
+          example: "María García"
+        urlPhotoArticleFirst:
+          type: string
+          description: URL de la foto del artículo del primer usuario
+          example: "https://s3.amazonaws.com/bucket/article1.jpg"
+        urlPhotoArticleSecond:
+          type: string
+          description: URL de la foto del artículo del segundo usuario
+          example: "https://s3.amazonaws.com/bucket/article2.jpg"
+        firstArticleName:
+          type: string
+          description: Nombre del artículo del primer usuario
+          example: "Camiseta Nike"
+        secondArticleName:
+          type: string
+          description: Nombre del artículo del segundo usuario
+          example: "Jeans Levi's"
+        urlChat:
+          type: string
+          description: URL del chat de WhatsApp
+          example: "https://wa.me/3001234567"
+        date:
+          type: string
+          description: Fecha del match
+          example: "12/15/2023 10:30:25 AM"
+
+    Image:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: ID único de la imagen
+          example: "507f1f77bcf86cd799439016"
+        profilePicture:
+          type: string
+          description: URL de la imagen almacenada en S3
+          example: "https://s3.amazonaws.com/bucket/image.jpg"
+
+    Error:
+      type: object
+      properties:
+        data:
+          type: string
+          nullable: true
+          example: null
+        message:
+          type: string
+          description: Mensaje de error descriptivo
+          example: "Validation error" 

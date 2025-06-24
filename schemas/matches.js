@@ -1,5 +1,5 @@
 /* eslint-disable no-useless-escape */
-const joi = require('@hapi/joi')
+const joi = require('joi')
 
 const mongoIdSchema = joi.string().regex(/^[0-9a-fA-F]{24}$/);
 const matchUserFirstSchema = joi.string().max(120);

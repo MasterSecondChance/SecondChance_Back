@@ -1,6 +1,5 @@
 const express = require("express");
 const passport = require("passport");
-const boom = require("@hapi/boom");
 const jwt = require("jsonwebtoken");
 const ArticlesServices = require('../services/articles');
 const api = express.Router();
@@ -17,7 +16,9 @@ api.post("/token", async function(req, res, next) {
     const articlesService = new ArticlesServices();
     try {
       if (error || !user) {
-        next(boom.unauthorized());
+        const authError = new Error('Unauthorized');
+        authError.statusCode = 401;
+        return next(authError);
       }
 
       req.login(user, { session: false }, async function(error) {

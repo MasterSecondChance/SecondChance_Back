@@ -1,6 +1,5 @@
 const passport = require("passport");
 const { BasicStrategy } = require("passport-http");
-const boom = require("@hapi/boom");
 const bcrypt = require("bcrypt");
 const MongoLib = require("../../../lib/mongo");
 
@@ -11,11 +10,15 @@ passport.use(
     try {
       const [user] = await mongoDB.getAll("users", { phone: username });
       if (!user) {
-        return cb(boom.unauthorized(), false);
+        const error = new Error('Unauthorized');
+        error.statusCode = 401;
+        return cb(error, false);
       }
 
       if (!(await bcrypt.compare(password, user.password))) {
-        return cb(boom.unauthorized(), false);
+        const error = new Error('Unauthorized');
+        error.statusCode = 401;
+        return cb(error, false);
       }
 
       return cb(null, user);
