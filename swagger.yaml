@@ -5,16 +5,21 @@ info:
     **Troud** es una aplicación backend tipo "Tinder" para intercambio de ropa que permite a los usuarios buscar, encontrar e intercambiar prendas de vestir.
     
     ## Características Principales
-    - Gestión de usuarios con autenticación JWT
-    - CRUD completo de artículos de ropa
+    - Gestión de usuarios con autenticación JWT robusta
+    - CRUD completo de artículos de ropa con validaciones
     - Sistema de reacciones (Like, SuperLike, DisLike)
     - Sistema de matches automático
     - Subida de imágenes a AWS S3
+    - Sistema de manejo de errores consistente
+    - Validaciones automáticas de ObjectId y esquemas
     
-    ## Autenticación
+    ## Autenticación y Seguridad
     La API utiliza dos tipos de autenticación:
     - **Basic Auth**: Para obtener el token inicial (username=phone, password=password)
     - **JWT Bearer**: Para endpoints protegidos (Header: `Authorization: Bearer <token>`)
+    - **Tokens**: Expiración de 30 minutos
+    - **Validación automática**: ObjectId y formatos de entrada
+    - **Manejo de errores**: Respuestas consistentes con códigos HTTP apropiados
   version: 1.0.0
   contact:
     name: Troud Team
@@ -23,9 +28,9 @@ info:
     name: ISC
 
 servers:
-  - url: http://localhost:8000
+  - url: http://localhost:3000/api
     description: Servidor de desarrollo local
-  - url: https://troud.vercel.app
+  - url: https://troud.vercel.app/api
     description: Servidor de producción
 
 tags:
@@ -67,7 +72,7 @@ paths:
                   endpoints:
                     type: object
 
-  /api/auth/token:
+  /auth/token:
     post:
       tags:
         - Authentication
@@ -94,7 +99,7 @@ paths:
         '401':
           description: Credenciales incorrectas
 
-  /api/users:
+  /users:
     get:
       tags:
         - Users
@@ -118,13 +123,16 @@ paths:
               schema:
                 type: object
                 properties:
+                  success:
+                    type: boolean
+                    example: true
                   data:
                     type: array
                     items:
                       $ref: '#/components/schemas/User'
                   message:
                     type: string
-                    example: "users listed"
+                    example: "users listed successfully"
     
     post:
       tags:
@@ -145,7 +153,7 @@ paths:
         '401':
           description: Usuario duplicado
 
-  /api/users/{userId}:
+  /users/{userId}:
     get:
       tags:
         - Users
@@ -192,6 +200,8 @@ paths:
       tags:
         - Users
       summary: Eliminar usuario
+      security:
+        - BearerAuth: []
       parameters:
         - name: userId
           in: path
@@ -208,14 +218,21 @@ paths:
               schema:
                 type: object
                 properties:
+                  success:
+                    type: boolean
+                    example: true
                   data:
                     type: string
                     description: ID del usuario eliminado
                   message:
                     type: string
-                    example: "users deleted"
+                    example: "user deleted successfully"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
-  /api/articles:
+  /articles:
     get:
       tags:
         - Articles
@@ -252,6 +269,8 @@ paths:
       tags:
         - Articles
       summary: Crear nuevo artículo
+      security:
+        - BearerAuth: []
       requestBody:
         required: true
         content:
@@ -266,20 +285,25 @@ paths:
               schema:
                 type: object
                 properties:
+                  success:
+                    type: boolean
+                    example: true
                   data:
                     type: string
                     description: ID del artículo creado
                   message:
                     type: string
-                    example: "Article created"
+                    example: "article created successfully"
         '400':
           description: Datos de entrada inválidos
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
-  /api/articles/{articleId}:
+  /articles/{articleId}:
     get:
       tags:
         - Articles
@@ -362,6 +386,8 @@ paths:
       tags:
         - Articles
       summary: Eliminar artículo
+      security:
+        - BearerAuth: []
       parameters:
         - name: articleId
           in: path
@@ -378,14 +404,21 @@ paths:
               schema:
                 type: object
                 properties:
+                  success:
+                    type: boolean
+                    example: true
                   data:
                     type: string
                     description: ID del artículo eliminado
                   message:
                     type: string
-                    example: "Article deleted"
+                    example: "article deleted successfully"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
-  /api/articles/categories/{category}/{phoneUser}:
+  /articles/categories/{category}/{phoneUser}:
     get:
       tags:
         - Articles
@@ -425,7 +458,7 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
-  /api/articles/unreaction/{phoneUser}:
+  /articles/unreaction/{phoneUser}:
     get:
       tags:
         - Articles
@@ -459,11 +492,13 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
-  /api/reactions:
+  /reactions:
     get:
       tags:
         - Reactions
       summary: Listar reacciones
+      security:
+        - BearerAuth: []
       parameters:
         - name: tags
           in: query
@@ -479,13 +514,18 @@ paths:
               schema:
                 type: object
                 properties:
+                  success:
+                    type: boolean
+                    example: true
                   data:
                     type: array
                     items:
                       $ref: '#/components/schemas/Reaction'
                   message:
                     type: string
-                    example: "reaction listed"
+                    example: "reactions listed successfully"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
     
     post:
       tags:
@@ -550,7 +590,7 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
-  /api/reactions/{reactionId}:
+  /reactions/{reactionId}:
     get:
       tags:
         - Reactions
@@ -604,7 +644,7 @@ paths:
                     type: string
                     example: "Reaction deleted"
 
-  /api/matches:
+  /matches:
     get:
       tags:
         - Matches
@@ -667,7 +707,7 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
-  /api/matches/{matchId}:
+  /matches/{matchId}:
     get:
       tags:
         - Matches
@@ -694,7 +734,7 @@ paths:
                     type: string
                     example: "Match retrieved"
 
-  /api/matches/phone/{phoneFirst}:
+  /matches/phone/{phoneFirst}:
     get:
       tags:
         - Matches
@@ -723,7 +763,7 @@ paths:
                     type: string
                     example: "Match retrieved"
 
-  /api/matches/{phoneFirst}/{phoneSecond}:
+  /matches/{phoneFirst}/{phoneSecond}:
     delete:
       tags:
         - Matches
@@ -762,7 +802,7 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
-  /api/images:
+  /images:
     get:
       tags:
         - Images
@@ -841,7 +881,7 @@ paths:
                         type: object
                         description: Objeto de error detallado
 
-  /api/images/{imageId}:
+  /images/{imageId}:
     get:
       tags:
         - Images
@@ -879,11 +919,18 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: Token JWT obtenido del endpoint /api/auth/token
+      description: Token JWT obtenido del endpoint /auth/token
 
   responses:
     Unauthorized:
       description: Token de acceso faltante o inválido
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    
+    NotFound:
+      description: Recurso no encontrado
       content:
         application/json:
           schema:
@@ -1386,11 +1433,17 @@ components:
     Error:
       type: object
       properties:
-        data:
-          type: string
-          nullable: true
-          example: null
-        message:
-          type: string
-          description: Mensaje de error descriptivo
-          example: "Validation error" 
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            message:
+              type: string
+              description: Mensaje de error descriptivo
+              example: "Validation error"
+            stack:
+              type: string
+              description: Stack trace (solo en desarrollo)
+              example: "Error: Validation error\n    at..." 

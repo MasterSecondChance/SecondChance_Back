@@ -3,6 +3,7 @@ const passport = require('passport');
 const ArticlesServices = require('../services/articles');
 const ReactionsServices = require('../services/reactions');
 const { articleSchema, updateArticleSchema } = require('../schemas/articles');
+const { asyncHandler, validateRequest, validateObjectId, NotFoundError, ConflictError } = require('../utils/errorHandler');
 const moment = require('moment');
 
 require("../utils/auth/strategies/jwt");
@@ -10,152 +11,148 @@ require("../utils/auth/strategies/jwt");
 function articlesApi(app) {
     
   const router = express.Router();
-  app.use('/api/articles', router);
+  app.use('/articles', router);
 
   const articlesService = new ArticlesServices();
   const reactionServices = new ReactionsServices();
 
   router.get('/',
-              passport.authenticate("jwt", {session:false}),
-              async function (req, res, next) {
-    const { phoneOwner } = req.query;
-    try {
+    passport.authenticate("jwt", {session:false}),
+    asyncHandler(async (req, res) => {
+      const { phoneOwner } = req.query;
       const articles = await articlesService.getArticles({ phoneOwner });
       res.status(200).json({
+        success: true,
         data: articles,
-        message: 'articles listed',
+        message: 'articles listed successfully',
       });
-    } catch (err) {
-      next(err);
-    }
-  });
+    })
+  );
 
   router.get('/categories/:category/:phoneUser',
-             passport.authenticate("jwt", {session:false}),
-              async function (req, res, next) {
-    const { category, phoneUser} = req.params;
-    try {
+    passport.authenticate("jwt", {session:false}),
+    asyncHandler(async (req, res) => {
+      const { category, phoneUser} = req.params;
       const idArticles = await reactionServices.getReactionsByPhoneUser({phoneUser});
       const articles = await articlesService.getArticlesByCategory({ category }, idArticles, phoneUser);
       res.status(200).json({
+        success: true,
         data: articles,
-        message: 'articles listed',
+        message: 'articles by category listed successfully',
       });
-    } catch (err) {
-      next(err);
-    }
-  });
+    })
+  );
 
-  router.get('/:articleId', async function (req, res, next) {
-    const { articleId } = req.params;
-    try {
-      const superLikes = await reactionServices.getSuperLikesByArticle({articleId});
-      const likes = await reactionServices.getLikesByArticle({articleId});
-      const disLikes = await reactionServices.getDisLikesByArticle({articleId});
-      const article = await articlesService.getArticle({ articleId });
+  router.get('/:articleId',
+    validateObjectId('articleId'),
+    asyncHandler(async (req, res) => {
+      const { articleId } = req.params;
+      
+      const [article, superLikes, likes, disLikes] = await Promise.all([
+        articlesService.getArticle({ articleId }),
+        reactionServices.getSuperLikesByArticle({ articleId }),
+        reactionServices.getLikesByArticle({ articleId }),
+        reactionServices.getDisLikesByArticle({ articleId })
+      ]);
+
+      if (!article || Object.keys(article).length === 0) {
+        throw new NotFoundError('Article not found');
+      }
+
       res.status(200).json({
+        success: true,
         data: article,
-        like: likes,
-        superLikes: superLikes,
-        dislikes: disLikes,
-        message: 'article retrieved',
+        reactions: {
+          likes: likes,
+          superLikes: superLikes,
+          dislikes: disLikes
+        },
+        message: 'article retrieved successfully',
       });
-    } catch (err) {
-      next(err);
-    }
-  });
+    })
+  );
 
   /**Articles by ID without reaction */
   router.get('/unreaction/:phoneUser', 
-        passport.authenticate("jwt", {session:false}),
-        async function (req, res, next) {
-    const { phoneUser } = req.params;
-    try {
+    passport.authenticate("jwt", {session:false}),
+    asyncHandler(async (req, res) => {
+      const { phoneUser } = req.params;
       const idArticles = await reactionServices.getReactionsByPhoneUser({phoneUser});
       const articles = await articlesService.getArticleswithReaction(idArticles, phoneUser);
       res.status(200).json({
+        success: true,
         data: articles,
-        message: 'article without reaction retrieved',
+        message: 'articles without reaction retrieved successfully',
       });
-    } catch (err) {
-      next(err);
-    }
-  });
+    })
+  );
 
   router.post('/', 
-              //passport.authenticate("jwt", {session:false}),
-              async function (req, res, next) {
-    const { body: article } = req;
-    let result = null
-    const now = moment();
-    article.date = now.format('MM/DD/YYYY HH:mm:ss A');
-    result = articleSchema.validate(article)
+    passport.authenticate("jwt", {session:false}),
+    validateRequest(articleSchema),
+    asyncHandler(async (req, res) => {
+      const { body: article } = req;
+      
+      // Add timestamp
+      const now = moment();
+      article.date = now.format('MM/DD/YYYY HH:mm:ss A');
 
-    if (result.error) {
-      res.status(400).json({
-        data: null,
-        message: result.error.details[0].message,
-      })
-    }else{
-        try {
-          const createArticleId = await articlesService.createArticle({ article });
-          let message = 'Article created'
-    
-          if(!createArticleId) {
-            message = 'Duplicated Article'
-          }
-    
-          res.status(201).json({
-            data: createArticleId,
-            message,
-          });
-        } catch (err) {
-          next(err);
-        }
-    }
-  });
+      const createArticleId = await articlesService.createArticle({ article });
+      if (!createArticleId) {
+        throw new ConflictError('Failed to create article');
+      }
+
+      res.status(201).json({
+        success: true,
+        data: createArticleId,
+        message: 'article created successfully',
+      });
+    })
+  );
 
   router.put('/:articleId',
-              passport.authenticate("jwt", {session:false}),
-              async function (req, res, next) {
-    const { articleId } = req.params;
-    const { body: article } = req;
-    let result = null
+    passport.authenticate("jwt", {session:false}),
+    validateObjectId('articleId'),
+    validateRequest(updateArticleSchema),
+    asyncHandler(async (req, res) => {
+      const { articleId } = req.params;
+      const { body: article } = req;
 
-    result = updateArticleSchema.validate(article);
-    
-    if (result.error) {
-      res.status(400).json({
-        data: null,
-        message: result.error.details[0].message,
-      })
-    }else{
-      try {
-        const updateArticleId = await articlesService.updateArticle({ articleId, article });
-        res.status(200).json({
-          data: updateArticleId,
-          message: 'Article updated',
-        });
-      } catch (err) {
-        next(err);
+      // Verify article exists before updating
+      const existingArticle = await articlesService.getArticle({ articleId });
+      if (!existingArticle || Object.keys(existingArticle).length === 0) {
+        throw new NotFoundError('Article not found');
       }
-    }
-  });
+
+      const updateArticleId = await articlesService.updateArticle({ articleId, article });
+      res.status(200).json({
+        success: true,
+        data: updateArticleId,
+        message: 'article updated successfully',
+      });
+    })
+  );
 
   router.delete('/:articleId',
-              //passport.authenticate("jwt", {session:false}),
-              async function (req, res, next) {
-    const { articleId } = req.params;
-    try {
+    passport.authenticate("jwt", {session:false}),
+    validateObjectId('articleId'),
+    asyncHandler(async (req, res) => {
+      const { articleId } = req.params;
+      
+      // Verify article exists before deleting
+      const existingArticle = await articlesService.getArticle({ articleId });
+      if (!existingArticle || Object.keys(existingArticle).length === 0) {
+        throw new NotFoundError('Article not found');
+      }
+
       const deleteArticleId = await articlesService.deleteArticle({ articleId });
       res.status(200).json({
+        success: true,
         data: deleteArticleId,
-        message: 'Article deleted',
+        message: 'article deleted successfully',
       });
-    } catch (err) {
-      next(err);
-    }
-  });
+    })
+  );
 }
 
 module.exports = articlesApi;

@@ -2,126 +2,116 @@ const express = require('express');
 const passport = require('passport');
 const UsersService = require('../services/users');
 const { userSchema, updateUserSchema } = require('../schemas/users');
+const { asyncHandler, validateRequest, validateObjectId, NotFoundError, ConflictError } = require('../utils/errorHandler');
 require("../utils/auth/strategies/jwt");
 
 function usersApi(app) {
   const router = express.Router();
-  app.use('/api/users', router);
+  app.use('/users', router);
 
   const usersService = new UsersService();
 
   router.get('/',
-              passport.authenticate("jwt", {session:false}),
-              async function (req, res, next) {
-    const { phone } = req.query;
-    try {
+    passport.authenticate("jwt", {session:false}),
+    asyncHandler(async (req, res) => {
+      const { phone } = req.query;
       const users = await usersService.getUsers({ phone });
       res.status(200).json({
+        success: true,
         data: users,
-        message: 'users listed',
+        message: 'users listed successfully',
       });
-    } catch (err) {
-      next(err);
-    }
-  });
+    })
+  );
 
   router.get('/:userId',
     passport.authenticate("jwt", {session:false}),
-    async function (req, res, next) {
-    const { userId } = req.params;
-    try {
+    validateObjectId('userId'),
+    asyncHandler(async (req, res) => {
+      const { userId } = req.params;
       const user = await usersService.getUser({ userId });
-      res.status(200).json({
-        data: user,
-        message: 'user retrieved',
-      });
-    } catch (err) {
-      next(err);
-    }
-  });
-
-  router.post('/', async function (req, res, next) {
-    const { body: user } = req;
-    const phone = user.phone;
-    let result = null
-
-    const existUser = await usersService.getUserExist(phone);
-    
-    result = userSchema.validate(user);
-    if (result.error || existUser !== '') {
-      if(result.error){
-        res.status(400).json({
-          data: null,
-          message: result.error.details[0].message,
-        });
-      }else{
-        res.status(401).json({
-          data: null,
-          message: 'Duplicated User',
-        });
+      
+      if (!user || Object.keys(user).length === 0) {
+        throw new NotFoundError('User not found');
       }
-    }else{
-        try {
-          const createUserId = await usersService.createUser({ user });
-          let message;
-          if(!createUserId) {
-            message = 'Phone Duplicated'//'Duplicated User'
-          }else{
-            message = 'user created';
-          }
-    
-          res.status(201).json({
-            data: createUserId,
-            phone: user.phone,
-            message,
-          });
-        } catch (err) {
-          next(err);
-        }
-    }
-  });
+      
+      res.status(200).json({
+        success: true,
+        data: user,
+        message: 'user retrieved successfully',
+      });
+    })
+  );
+
+  router.post('/',
+    validateRequest(userSchema),
+    asyncHandler(async (req, res) => {
+      const { body: user } = req;
+      const { phone } = user;
+
+      // Check if user already exists
+      const existUser = await usersService.getUserExist(phone);
+      if (existUser && existUser !== '') {
+        throw new ConflictError('User with this phone number already exists');
+      }
+
+      const createUserId = await usersService.createUser({ user });
+      if (!createUserId) {
+        throw new ConflictError('Failed to create user - phone number may already exist');
+      }
+
+      res.status(201).json({
+        success: true,
+        data: createUserId,
+        phone: user.phone,
+        message: 'user created successfully',
+      });
+    })
+  );
 
   router.put('/:userId',
-              passport.authenticate("jwt", {session:false}),
-              async function (req, res, next) {
-    const { userId } = req.params;
-    const { body: user } = req;
-    let result = null;
+    passport.authenticate("jwt", {session:false}),
+    validateObjectId('userId'),
+    validateRequest(updateUserSchema),
+    asyncHandler(async (req, res) => {
+      const { userId } = req.params;
+      const { body: user } = req;
 
-    result = updateUserSchema.validate(user);
-    
-    if (result.error) {
-      res.status(400).json({
-        data: null,
-        message: result.error.details[0].message,
-      })
-    }else{
-      try {
-        const updateUserId = await usersService.updateUser({ userId, user });
-        res.status(200).json({
-          data: updateUserId,
-          message: 'users updated',
-        });
-      } catch (err) {
-        next(err);
+      // Verify user exists before updating
+      const existingUser = await usersService.getUser({ userId });
+      if (!existingUser || Object.keys(existingUser).length === 0) {
+        throw new NotFoundError('User not found');
       }
-    }
-  });
+
+      const updateUserId = await usersService.updateUser({ userId, user });
+      res.status(200).json({
+        success: true,
+        data: updateUserId,
+        message: 'user updated successfully',
+      });
+    })
+  );
 
   router.delete('/:userId',
-              //passport.authenticate("jwt", {session:false}),
-              async function (req, res, next) {
-    const { userId } = req.params;
-    try {
+    passport.authenticate("jwt", {session:false}),
+    validateObjectId('userId'),
+    asyncHandler(async (req, res) => {
+      const { userId } = req.params;
+      
+      // Verify user exists before deleting
+      const existingUser = await usersService.getUser({ userId });
+      if (!existingUser || Object.keys(existingUser).length === 0) {
+        throw new NotFoundError('User not found');
+      }
+
       const deleteUserId = await usersService.deleteUser({ userId });
       res.status(200).json({
+        success: true,
         data: deleteUserId,
-        message: 'users deleted',
+        message: 'user deleted successfully',
       });
-    } catch (err) {
-      next(err);
-    }
-  });
+    })
+  );
 }
 
 module.exports = usersApi;
