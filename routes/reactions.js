@@ -5,6 +5,7 @@ const MatchesServices = require('../services/matches');
 const UsersServices = require('../services/users');
 const ArticlesServices = require('../services/articles');
 const { reactionSchema } = require('../schemas/reactions');
+const { asyncHandler, validateRequest, validateObjectId, NotFoundError } = require('../utils/errorHandler');
 require("../utils/auth/strategies/jwt");
 
 function reactionsApi(app) {
@@ -17,32 +18,36 @@ function reactionsApi(app) {
   const articlesServices = new ArticlesServices();
 
   router.get('/',
-             // passport.authenticate("jwt", {session:false}),
-              async function (req, res, next) {
-    const { tags } = req.query;
-    try {
+    passport.authenticate("jwt", {session:false}),
+    asyncHandler(async (req, res) => {
+      const { tags } = req.query;
       const reactions = await reactionsService.getReactions({ tags });
       res.status(200).json({
+        success: true,
         data: reactions,
-        message: 'reaction listed',
+        message: 'reactions listed successfully',
       });
-    } catch (err) {
-      next(err);
-    }
-  });
+    })
+  );
 
-  router.get('/:reactionId', async function (req, res, next) {
-    const { reactionId } = req.params;
-    try {
+  router.get('/:reactionId',
+    passport.authenticate("jwt", {session:false}),
+    validateObjectId('reactionId'),
+    asyncHandler(async (req, res) => {
+      const { reactionId } = req.params;
       const reaction = await reactionsService.getReaction({ reactionId });
+      
+      if (!reaction || Object.keys(reaction).length === 0) {
+        throw new NotFoundError('Reaction not found');
+      }
+      
       res.status(200).json({
+        success: true,
         data: reaction,
-        message: 'reaction retrieved',
+        message: 'reaction retrieved successfully',
       });
-    } catch (err) {
-      next(err);
-    }
-  });
+    })
+  );
 
   router.post('/', 
               passport.authenticate("jwt", {session:false}),
@@ -108,19 +113,25 @@ function reactionsApi(app) {
   });
 
   router.delete('/:reactionId',
-              //passport.authenticate("jwt", {session:false}),
-              async function (req, res, next) {
-    const { reactionId } = req.params;
-    try {
+    passport.authenticate("jwt", {session:false}),
+    validateObjectId('reactionId'),
+    asyncHandler(async (req, res) => {
+      const { reactionId } = req.params;
+      
+      // Verify reaction exists before deleting
+      const existingReaction = await reactionsService.getReaction({ reactionId });
+      if (!existingReaction || Object.keys(existingReaction).length === 0) {
+        throw new NotFoundError('Reaction not found');
+      }
+
       const deleteReactionId = await reactionsService.deleteReaction({ reactionId });
       res.status(200).json({
+        success: true,
         data: deleteReactionId,
-        message: 'Reaction deleted',
+        message: 'reaction deleted successfully',
       });
-    } catch (err) {
-      next(err);
-    }
-  });
+    })
+  );
 }
 
 module.exports = reactionsApi;

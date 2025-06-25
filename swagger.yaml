@@ -5,16 +5,21 @@ info:
     **Troud** es una aplicación backend tipo "Tinder" para intercambio de ropa que permite a los usuarios buscar, encontrar e intercambiar prendas de vestir.
     
     ## Características Principales
-    - Gestión de usuarios con autenticación JWT
-    - CRUD completo de artículos de ropa
+    - Gestión de usuarios con autenticación JWT robusta
+    - CRUD completo de artículos de ropa con validaciones
     - Sistema de reacciones (Like, SuperLike, DisLike)
     - Sistema de matches automático
     - Subida de imágenes a AWS S3
+    - Sistema de manejo de errores consistente
+    - Validaciones automáticas de ObjectId y esquemas
     
-    ## Autenticación
+    ## Autenticación y Seguridad
     La API utiliza dos tipos de autenticación:
     - **Basic Auth**: Para obtener el token inicial (username=phone, password=password)
     - **JWT Bearer**: Para endpoints protegidos (Header: `Authorization: Bearer <token>`)
+    - **Tokens**: Expiración de 30 minutos
+    - **Validación automática**: ObjectId y formatos de entrada
+    - **Manejo de errores**: Respuestas consistentes con códigos HTTP apropiados
   version: 1.0.0
   contact:
     name: Troud Team
@@ -118,13 +123,16 @@ paths:
               schema:
                 type: object
                 properties:
+                  success:
+                    type: boolean
+                    example: true
                   data:
                     type: array
                     items:
                       $ref: '#/components/schemas/User'
                   message:
                     type: string
-                    example: "users listed"
+                    example: "users listed successfully"
     
     post:
       tags:
@@ -192,6 +200,8 @@ paths:
       tags:
         - Users
       summary: Eliminar usuario
+      security:
+        - BearerAuth: []
       parameters:
         - name: userId
           in: path
@@ -208,12 +218,19 @@ paths:
               schema:
                 type: object
                 properties:
+                  success:
+                    type: boolean
+                    example: true
                   data:
                     type: string
                     description: ID del usuario eliminado
                   message:
                     type: string
-                    example: "users deleted"
+                    example: "user deleted successfully"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   /articles:
     get:
@@ -252,6 +269,8 @@ paths:
       tags:
         - Articles
       summary: Crear nuevo artículo
+      security:
+        - BearerAuth: []
       requestBody:
         required: true
         content:
@@ -266,18 +285,23 @@ paths:
               schema:
                 type: object
                 properties:
+                  success:
+                    type: boolean
+                    example: true
                   data:
                     type: string
                     description: ID del artículo creado
                   message:
                     type: string
-                    example: "Article created"
+                    example: "article created successfully"
         '400':
           description: Datos de entrada inválidos
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
   /articles/{articleId}:
     get:
@@ -362,6 +386,8 @@ paths:
       tags:
         - Articles
       summary: Eliminar artículo
+      security:
+        - BearerAuth: []
       parameters:
         - name: articleId
           in: path
@@ -378,12 +404,19 @@ paths:
               schema:
                 type: object
                 properties:
+                  success:
+                    type: boolean
+                    example: true
                   data:
                     type: string
                     description: ID del artículo eliminado
                   message:
                     type: string
-                    example: "Article deleted"
+                    example: "article deleted successfully"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   /articles/categories/{category}/{phoneUser}:
     get:
@@ -464,6 +497,8 @@ paths:
       tags:
         - Reactions
       summary: Listar reacciones
+      security:
+        - BearerAuth: []
       parameters:
         - name: tags
           in: query
@@ -479,13 +514,18 @@ paths:
               schema:
                 type: object
                 properties:
+                  success:
+                    type: boolean
+                    example: true
                   data:
                     type: array
                     items:
                       $ref: '#/components/schemas/Reaction'
                   message:
                     type: string
-                    example: "reaction listed"
+                    example: "reactions listed successfully"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
     
     post:
       tags:
@@ -884,6 +924,13 @@ components:
   responses:
     Unauthorized:
       description: Token de acceso faltante o inválido
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    
+    NotFound:
+      description: Recurso no encontrado
       content:
         application/json:
           schema:
@@ -1386,11 +1433,17 @@ components:
     Error:
       type: object
       properties:
-        data:
-          type: string
-          nullable: true
-          example: null
-        message:
-          type: string
-          description: Mensaje de error descriptivo
-          example: "Validation error" 
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            message:
+              type: string
+              description: Mensaje de error descriptivo
+              example: "Validation error"
+            stack:
+              type: string
+              description: Stack trace (solo en desarrollo)
+              example: "Error: Validation error\n    at..." 

@@ -17,23 +17,25 @@
 
 ### Stack Backend
 - **Framework**: Express.js
-- **Base de Datos**: MongoDB
+- **Base de Datos**: MongoDB 6.x
 - **Autenticación**: Passport.js (Basic + JWT)
-- **Validación**: Joi
+- **Validación**: Joi con middleware personalizado
+- **Manejo de Errores**: Sistema robusto con clases personalizadas
 - **Almacenamiento**: AWS S3
-- **Encriptación**: bcrypt
+- **Encriptación**: bcrypt 5.x
 - **Testing**: Mocha + Supertest + nyc
 
 ### Estructura del Proyecto
 ```
 ├── config/          # Configuración de variables de entorno
 ├── lib/             # Conexión a MongoDB
-├── routes/          # Rutas de la API
+├── routes/          # Rutas de la API con autenticación
 ├── schemas/         # Validación de datos con Joi
 ├── services/        # Lógica de negocio
-├── utils/           # Utilidades (auth, mocks, testing)
+├── utils/           # Utilidades (auth, mocks, testing, errorHandler)
 ├── test/            # Pruebas unitarias e integración
-└── index.js         # Punto de entrada de la aplicación
+├── scripts/         # Scripts de configuración y mantenimiento
+└── index.js         # Punto de entrada con manejo de errores
 ```
 
 ## Instalación y Configuración
@@ -97,6 +99,16 @@ npm run cover  # Ejecuta pruebas con coverage
 npm run report # Genera reporte HTML de coverage
 ```
 
+### Scripts de Base de Datos
+```bash
+npm run test:connection  # Probar conexión a MongoDB
+npm run test:auth       # Probar endpoint de autenticación
+npm run schema:setup    # Configurar esquemas e índices
+npm run seed           # Insertar datos de prueba
+npm run db:reset       # ⚠️ Eliminar todas las colecciones
+npm run db:full-setup  # Setup completo (schema + seed)
+```
+
 ## Endpoints de la API
 
 ### Autenticación
@@ -107,27 +119,27 @@ npm run report # Genera reporte HTML de coverage
 - `GET /api/users/:userId` - Obtener usuario por ID (requiere auth)
 - `POST /api/users` - Crear nuevo usuario
 - `PUT /api/users/:userId` - Actualizar usuario (requiere auth)
-- `DELETE /api/users/:userId` - Eliminar usuario
+- `DELETE /api/users/:userId` - Eliminar usuario (**requiere auth**)
 
 ### Artículos
 - `GET /api/articles` - Listar artículos (requiere auth)
-- `GET /api/articles/:articleId` - Obtener artículo por ID
+- `GET /api/articles/:articleId` - Obtener artículo por ID con estadísticas de reacciones
 - `GET /api/articles/categories/:category/:phoneUser` - Obtener artículos por categoría (requiere auth)
 - `GET /api/articles/unreaction/:phoneUser` - Obtener artículos sin reacción (requiere auth)
-- `POST /api/articles` - Crear nuevo artículo
+- `POST /api/articles` - Crear nuevo artículo (**requiere auth**)
 - `PUT /api/articles/:articleId` - Actualizar artículo (requiere auth)
-- `DELETE /api/articles/:articleId` - Eliminar artículo
+- `DELETE /api/articles/:articleId` - Eliminar artículo (**requiere auth**)
 
 ### Reacciones
-- `GET /api/reactions` - Listar reacciones
-- `GET /api/reactions/:reactionId` - Obtener reacción por ID
+- `GET /api/reactions` - Listar reacciones (**requiere auth**)
+- `GET /api/reactions/:reactionId` - Obtener reacción por ID (**requiere auth**)
 - `POST /api/reactions` - Crear nueva reacción (requiere auth)
-- `DELETE /api/reactions/:reactionId` - Eliminar reacción
+- `DELETE /api/reactions/:reactionId` - Eliminar reacción (**requiere auth**)
 
 ### Matches
-- `GET /api/matches` - Listar matches
-- `GET /api/matches/:matchId` - Obtener match por ID
-- `GET /api/matches/phone/:phoneFirst` - Obtener matches por teléfono
+- `GET /api/matches` - Listar matches (**requiere auth**)
+- `GET /api/matches/:matchId` - Obtener match por ID (**requiere auth**)
+- `GET /api/matches/phone/:phoneFirst` - Obtener matches por teléfono (**requiere auth**)
 - `POST /api/matches` - Crear nuevo match (requiere auth)
 - `DELETE /api/matches/:phoneFirst/:phoneSecond` - Eliminar match (requiere auth)
 
@@ -195,20 +207,31 @@ npm run report # Genera reporte HTML de coverage
 }
 ```
 
-## Seguridad
+## Seguridad y Arquitectura
 
 ### Autenticación
 - **Basic Auth**: Para obtener el token inicial (username=phone, password=password)
 - **JWT Bearer**: Para endpoints protegidos (Header: `Authorization: Bearer <token>`)
+- **Tokens expiración**: 30 minutos por defecto
 
-### Validación
-- Todos los inputs son validados con esquemas Joi
-- Contraseñas encriptadas con bcrypt (salt rounds: 10)
-- Validación de formatos de email y teléfono con regex
+### Sistema de Manejo de Errores
+- **Clases de Error Personalizadas**: ValidationError, AuthenticationError, NotFoundError, ConflictError
+- **Middleware Global**: Captura y procesa todos los errores de forma consistente
+- **Logging Detallado**: Incluye URL, método, IP, timestamp para debugging
+- **Respuestas Consistentes**: Formato estandarizado con `success: boolean`
+- **Validación Automática**: ObjectId y esquemas Joi con middleware
+
+### Validación y Seguridad
+- **Validación de Entrada**: Todos los inputs validados con esquemas Joi
+- **Verificación de Existencia**: Recursos verificados antes de operaciones UPDATE/DELETE
+- **Validación de ObjectId**: Automática en todos los endpoints con parámetros ID
+- **Contraseñas**: Encriptadas con bcrypt (salt rounds: 10)
+- **Prevención de Duplicados**: Índices únicos en campos críticos
 
 ### CORS
 - Configurado para aceptar todos los orígenes en desarrollo
 - Métodos permitidos: GET, POST, PUT, DELETE
+- Headers personalizables para producción
 
 ## Despliegue
 

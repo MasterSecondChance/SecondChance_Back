@@ -2,6 +2,7 @@ const express = require('express');
 const passport = require('passport');
 const MatchesServices = require('../services/matches');
 const { matchSchema } = require('../schemas/matches');
+const { asyncHandler, validateRequest, validateObjectId, NotFoundError, ConflictError } = require('../utils/errorHandler');
 require("../utils/auth/strategies/jwt");
 
 function matchesApi(app) {
@@ -12,45 +13,49 @@ function matchesApi(app) {
   const matchesService = new MatchesServices();
 
   router.get('/',
-             // passport.authenticate("jwt", {session:false}),
-              async function (req, res, next) {
-    const { tags } = req.query;
-    try {
+    passport.authenticate("jwt", {session:false}),
+    asyncHandler(async (req, res) => {
+      const { tags } = req.query;
       const matches = await matchesService.getMatches({ tags });
       res.status(200).json({
+        success: true,
         data: matches,
-        message: 'Matches listed',
+        message: 'matches listed successfully',
       });
-    } catch (err) {
-      next(err);
-    }
-  });
+    })
+  );
 
-  router.get('/:matchId', async function (req, res, next) {
-    const { matchId } = req.params;
-    try {
+  router.get('/:matchId',
+    passport.authenticate("jwt", {session:false}),
+    validateObjectId('matchId'),
+    asyncHandler(async (req, res) => {
+      const { matchId } = req.params;
       const match = await matchesService.getMatch({ matchId });
+      
+      if (!match || Object.keys(match).length === 0) {
+        throw new NotFoundError('Match not found');
+      }
+      
       res.status(200).json({
+        success: true,
         data: match,
-        message: 'Match retrieved',
+        message: 'match retrieved successfully',
       });
-    } catch (err) {
-      next(err);
-    }
-  });
+    })
+  );
 
-  router.get('/phone/:phoneFirst', async function (req, res, next) {
-    const { phoneFirst } = req.params;
-    try {
+  router.get('/phone/:phoneFirst',
+    passport.authenticate("jwt", {session:false}),
+    asyncHandler(async (req, res) => {
+      const { phoneFirst } = req.params;
       const matches = await matchesService.getMatchesByPhone({ phoneFirst });
       res.status(200).json({
+        success: true,
         data: matches,
-        message: 'Match retrieved',
+        message: 'matches by phone retrieved successfully',
       });
-    } catch (err) {
-      next(err);
-    }
-  });
+    })
+  );
 
   router.post('/', 
               passport.authenticate("jwt", {session:false}),
